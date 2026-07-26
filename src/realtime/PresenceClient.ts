@@ -1,4 +1,4 @@
-import type { PresenceClient as PresenceClientContract, SparkMessage } from '../types';
+import type { BloomMessage, PresenceClient as PresenceClientContract, SparkMessage } from '../types';
 
 const OPEN = 1;
 const INITIAL_RECONNECT_DELAY_MS = 1_000;
@@ -28,6 +28,7 @@ interface PresenceClientOptions {
  */
 export class PresenceClient implements PresenceClientContract {
   private readonly callbacks = new Set<(x: number, y: number) => void>();
+  private readonly bloomCallbacks = new Set<(text: string) => void>();
   private readonly webSocketFactory: (url: string) => SocketLike;
   private readonly now: () => number;
   private readonly setTimeoutFn: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
@@ -73,6 +74,22 @@ export class PresenceClient implements PresenceClientContract {
     this.callbacks.add(callback);
   }
 
+  sendBloom(text: string): void {
+    // 火花と違い、メッセージ花火はスロットリングしない（連投を許容する）。
+    // 濫用の最終的な抑止はサーバーのレート制限が担う。
+    if (!this.enabled || typeof text !== 'string' || text.length === 0) return;
+    if (!this.socket || this.socket.readyState !== OPEN) return;
+    try {
+      this.socket.send(JSON.stringify({ type: 'bloom', text } satisfies BloomMessage));
+    } catch {
+      // A socket can close between readyState and send. The normal close path reconnects.
+    }
+  }
+
+  onRemoteBloom(callback: (text: string) => void): void {
+    this.bloomCallbacks.add(callback);
+  }
+
   setEnabled(enabled: boolean): void {
     if (this.disposed || this.enabled === enabled) return;
     this.enabled = enabled;
@@ -88,6 +105,7 @@ export class PresenceClient implements PresenceClientContract {
   dispose(): void {
     this.disposed = true;
     this.callbacks.clear();
+    this.bloomCallbacks.clear();
     this.cancelReconnect();
     this.closeSocket();
     this.url = null;
@@ -125,8 +143,13 @@ export class PresenceClient implements PresenceClientContract {
     } catch {
       return;
     }
-    if (!isSparkMessage(message)) return;
-    for (const callback of this.callbacks) callback(message.x, message.y);
+    if (isSparkMessage(message)) {
+      for (const callback of this.callbacks) callback(message.x, message.y);
+      return;
+    }
+    if (isBloomMessage(message)) {
+      for (const callback of this.bloomCallbacks) callback(message.text);
+    }
   }
 
   private scheduleReconnect(): void {
@@ -162,6 +185,12 @@ export class PresenceClient implements PresenceClientContract {
 
 function isNormalizedCoordinate(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+function isBloomMessage(value: unknown): value is BloomMessage {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<BloomMessage>;
+  return candidate.type === 'bloom' && typeof candidate.text === 'string' && candidate.text.length > 0;
 }
 
 function isSparkMessage(value: unknown): value is SparkMessage {

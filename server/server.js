@@ -4,6 +4,7 @@ const http = require('node:http');
 const { WebSocketServer, WebSocket } = require('ws');
 
 const MAX_MESSAGE_BYTES = 256;
+const MAX_MESSAGE_CHARS = 30;
 const MAX_MESSAGES_PER_SECOND = 10;
 // A peer that cannot drain roughly 256 maximum-size relay frames is considered
 // unavailable. Terminating it bounds one slow client's queued memory.
@@ -48,7 +49,7 @@ function createSparkServer(options = {}) {
       if (isBinary || Buffer.byteLength(raw) > MAX_MESSAGE_BYTES) return;
       if (!withinRateLimit(rateTimestamps, client)) return;
 
-      const message = parseSparkMessage(raw);
+      const message = parseRelayMessage(raw);
       if (!message) return;
 
       // Re-serializing forwards only the public protocol fields, never any
@@ -155,23 +156,34 @@ function withinRateLimit(rateTimestamps, client, now = Date.now()) {
   return true;
 }
 
-function parseSparkMessage(raw) {
+function parseRelayMessage(raw) {
   let value;
   try {
     value = JSON.parse(raw.toString());
   } catch {
     return null;
   }
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    value.type !== 'spark' ||
-    !isNormalizedCoordinate(value.x) ||
-    !isNormalizedCoordinate(value.y)
-  ) {
-    return null;
+  if (!value || typeof value !== 'object') return null;
+
+  if (value.type === 'spark') {
+    if (!isNormalizedCoordinate(value.x) || !isNormalizedCoordinate(value.y)) return null;
+    return { type: 'spark', x: value.x, y: value.y };
   }
-  return { type: 'spark', x: value.x, y: value.y };
+
+  // A message firework carries no coordinates: each receiving client places it
+  // in its own free sky, so position is never transmitted.
+  if (value.type === 'bloom') {
+    if (typeof value.text !== 'string') return null;
+    const text = value.text;
+    if (text.length === 0 || countChars(text) > MAX_MESSAGE_CHARS) return null;
+    return { type: 'bloom', text };
+  }
+
+  return null;
+}
+
+function countChars(text) {
+  return Array.from(text).length;
 }
 
 function isNormalizedCoordinate(value) {
@@ -193,6 +205,6 @@ module.exports = {
   MAX_PEER_BUFFERED_BYTES,
   broadcastSpark,
   createSparkServer,
-  parseSparkMessage,
+  parseRelayMessage,
   withinRateLimit,
 };

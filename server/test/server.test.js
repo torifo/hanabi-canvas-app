@@ -52,6 +52,47 @@ test('forwards a valid spark to other clients but never echoes it', async () => 
   });
 });
 
+test('forwards a message firework and never adds coordinates or identity', async () => {
+  await withRelay(async (url) => {
+    const sender = await connect(url);
+    const receiver = await connect(url);
+    try {
+      const remote = nextMessage(receiver);
+      const echoed = nextMessage(sender);
+      sender.send(JSON.stringify({ type: 'bloom', text: 'また明日' }));
+      // Position is never transmitted: each client places the bloom in its own sky.
+      assert.deepEqual(JSON.parse(await remote), { type: 'bloom', text: 'また明日' });
+      assert.equal(await echoed, null);
+    } finally {
+      sender.close();
+      receiver.close();
+    }
+  });
+});
+
+test('drops message fireworks that are empty, overlong, or the wrong shape', async () => {
+  await withRelay(async (url) => {
+    const sender = await connect(url);
+    const receiver = await connect(url);
+    try {
+      const silent = nextMessage(receiver);
+      sender.send(JSON.stringify({ type: 'bloom', text: '' }));
+      sender.send(JSON.stringify({ type: 'bloom', text: 'あ'.repeat(31) }));
+      sender.send(JSON.stringify({ type: 'bloom' }));
+      sender.send(JSON.stringify({ type: 'bloom', text: 42 }));
+      assert.equal(await silent, null);
+
+      // A valid one still gets through afterwards.
+      const accepted = nextMessage(receiver);
+      sender.send(JSON.stringify({ type: 'bloom', text: 'あ'.repeat(30) }));
+      assert.deepEqual(JSON.parse(await accepted), { type: 'bloom', text: 'あ'.repeat(30) });
+    } finally {
+      sender.close();
+      receiver.close();
+    }
+  });
+});
+
 test('accepts only the configured production Origin on direct Node upgrades', async () => {
   const origin = 'https://hanabi.example.com';
   await withRelay(async (url) => {
