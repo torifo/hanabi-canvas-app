@@ -1,0 +1,143 @@
+<svg viewBox="0 0 2560 1440" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 夜の背景: 深いネイビー。下方をわずかに温める（縁側の気配） -->
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#05091c"/>
+      <stop offset="0.35" stop-color="#0a1128"/>
+      <stop offset="0.62" stop-color="#101a38"/>
+      <stop offset="0.85" stop-color="#141c38"/>
+      <stop offset="1"    stop-color="#191d30"/>
+    </linearGradient>
+    <!-- 火球のまわりの光暈 -->
+    <radialGradient id="emberHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#e8a860" stop-opacity="0.36"/>
+      <stop offset="0.35" stop-color="#c9803f" stop-opacity="0.16"/>
+      <stop offset="0.7"  stop-color="#a05f2e" stop-opacity="0.06"/>
+      <stop offset="1"    stop-color="#a05f2e" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 広域のごく淡い暖気 -->
+    <radialGradient id="warmField" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8a5a30" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#8a5a30" stop-opacity="0"/>
+    </radialGradient>
+    <!-- ボケ玉（後景の灯りの気配） -->
+    <radialGradient id="bokehWarm" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#b98a52" stop-opacity="0.22"/>
+      <stop offset="0.7" stop-color="#b98a52" stop-opacity="0.10"/>
+      <stop offset="1"   stop-color="#b98a52" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bokehCool" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#3d4f86" stop-opacity="0.20"/>
+      <stop offset="0.7" stop-color="#3d4f86" stop-opacity="0.09"/>
+      <stop offset="1"   stop-color="#3d4f86" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 持ち手の紙縒り: 先端に向かうかすかな暖色 -->
+    <linearGradient id="stick" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#181018"/>
+      <stop offset="0.75" stop-color="#241318"/>
+      <stop offset="1"    stop-color="#5a3220"/>
+    </linearGradient>
+    <filter id="soften" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+  </defs>
+
+  <!-- ===== 背景 ===== -->
+  <rect x="0" y="0" width="2560" height="1440" fill="url(#night)"/>
+
+  <!-- ピンボケの灯り（縁側・庭の気配。位置は抽象化） -->
+  <g filter="url(#soften)">
+    <circle cx="420"  cy="1030" r="190" fill="url(#bokehWarm)"/>
+    <circle cx="235"  cy="820"  r="120" fill="url(#bokehWarm)" opacity="0.7"/>
+    <circle cx="2260" cy="420"  r="170" fill="url(#bokehCool)"/>
+    <circle cx="2380" cy="980"  r="220" fill="url(#bokehWarm)" opacity="0.8"/>
+    <circle cx="1980" cy="1180" r="150" fill="url(#bokehCool)" opacity="0.8"/>
+    <circle cx="640"  cy="330"  r="130" fill="url(#bokehCool)" opacity="0.6"/>
+  </g>
+  <!-- ごく淡い星（数点のみ・主役を邪魔しない） -->
+  <g fill="#aeb6cc">
+    <circle cx="330" cy="180" r="2.2" opacity="0.4"/>
+    <circle cx="980" cy="120" r="2" opacity="0.35"/>
+    <circle cx="1780" cy="200" r="2.4" opacity="0.4"/>
+    <circle cx="2440" cy="150" r="2" opacity="0.3"/>
+  </g>
+
+  <!-- ===== 手持ち花火（線香花火）: 画面の主役 ===== -->
+  <!-- 全体を包む暖気 -->
+  <circle cx="1280" cy="760" r="640" fill="url(#warmField)"/>
+
+  <!-- 紙縒りの持ち手: 右上から火球へ -->
+  <path d="M1620,-60 Q1500,300 1330,672 L1306,660 Q1470,290 1584,-60 Z" fill="url(#stick)"/>
+  <!-- 紙縒りのねじれの示唆 -->
+  <path d="M1560,120 Q1552,150 1530,196 M1500,300 Q1490,330 1470,372 M1420,470 Q1410,498 1392,538"
+        stroke="#0d0810" stroke-width="6" fill="none" opacity="0.7" stroke-linecap="round"/>
+
+  <!-- 光暈 -->
+  <circle cx="1280" cy="742" r="420" fill="url(#emberHalo)"/>
+
+  <!-- 松葉: 放射する火花（案②方式: 脱彩した細線＋先端の分枝） -->
+  <g stroke="#f0dcb4" stroke-linecap="round" fill="none">
+    <path d="M1280,742 Q1252,560 1268,392"  stroke-width="3.4" opacity="0.85"/>
+    <path d="M1280,742 Q1392,600 1452,452"  stroke-width="3"   opacity="0.75"/>
+    <path d="M1280,742 Q1462,656 1588,580"  stroke-width="3.2" opacity="0.8"/>
+    <path d="M1280,742 Q1500,742 1672,772"  stroke-width="2.8" opacity="0.7"/>
+    <path d="M1280,742 Q1476,824 1608,946"  stroke-width="3.2" opacity="0.8"/>
+    <path d="M1280,742 Q1400,930 1462,1090" stroke-width="3"   opacity="0.75"/>
+    <path d="M1280,742 Q1300,970 1284,1168" stroke-width="3.6" opacity="0.85"/>
+    <path d="M1280,742 Q1168,930 1100,1088" stroke-width="3"   opacity="0.75"/>
+    <path d="M1280,742 Q1088,842 940,966"   stroke-width="3.2" opacity="0.8"/>
+    <path d="M1280,742 Q1064,760 880,796"   stroke-width="2.8" opacity="0.7"/>
+    <path d="M1280,742 Q1090,650 948,574"   stroke-width="3.2" opacity="0.8"/>
+    <path d="M1280,742 Q1168,570 1114,424"  stroke-width="3"   opacity="0.75"/>
+    <!-- 短めの中間光条 -->
+    <path d="M1280,742 Q1330,626 1368,530"  stroke-width="2.4" opacity="0.6"/>
+    <path d="M1280,742 Q1418,706 1536,688"  stroke-width="2.2" opacity="0.55"/>
+    <path d="M1280,742 Q1420,792 1548,850"  stroke-width="2.4" opacity="0.6"/>
+    <path d="M1280,742 Q1358,880 1396,1000" stroke-width="2.2" opacity="0.55"/>
+    <path d="M1280,742 Q1218,896 1186,1036" stroke-width="2.4" opacity="0.6"/>
+    <path d="M1280,742 Q1136,798 1016,858"  stroke-width="2.2" opacity="0.55"/>
+    <path d="M1280,742 Q1146,700 1032,672"  stroke-width="2.4" opacity="0.6"/>
+    <path d="M1280,742 Q1230,616 1198,514"  stroke-width="2.2" opacity="0.55"/>
+  </g>
+  <!-- 先端の分枝（松葉の枝分かれ・下向きに開く） -->
+  <g stroke="#e8cf9e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.75">
+    <path d="M1268,392 Q1244,360 1240,330 M1268,392 Q1290,356 1302,328"/>
+    <path d="M1588,580 Q1622,552 1638,528 M1588,580 Q1634,578 1662,590"/>
+    <path d="M1608,946 Q1654,952 1684,970 M1608,946 Q1638,984 1652,1014"/>
+    <path d="M1284,1168 Q1262,1204 1252,1232 M1284,1168 Q1310,1204 1326,1230"/>
+    <path d="M940,966 Q900,984 872,1006 M940,966 Q918,1002 908,1030"/>
+    <path d="M948,574 Q908,556 880,536 M948,574 Q924,540 914,512"/>
+  </g>
+  <!-- 火花の先端粒 -->
+  <g fill="#FFF6E0">
+    <circle cx="1268" cy="392" r="4"/>
+    <circle cx="1452" cy="452" r="3.4"/>
+    <circle cx="1588" cy="580" r="3.6"/>
+    <circle cx="1672" cy="772" r="3"/>
+    <circle cx="1608" cy="946" r="3.6"/>
+    <circle cx="1462" cy="1090" r="3.2"/>
+    <circle cx="1284" cy="1168" r="4"/>
+    <circle cx="1100" cy="1088" r="3.2"/>
+    <circle cx="940"  cy="966" r="3.6"/>
+    <circle cx="880"  cy="796" r="3"/>
+    <circle cx="948"  cy="574" r="3.6"/>
+    <circle cx="1114" cy="424" r="3.2"/>
+  </g>
+  <!-- 漂う微細な火の粉 -->
+  <g fill="#f5e6c8">
+    <circle cx="1420" cy="640" r="2.6" opacity="0.7"/>
+    <circle cx="1160" cy="610" r="2.2" opacity="0.6"/>
+    <circle cx="1360" cy="880" r="2.4" opacity="0.65"/>
+    <circle cx="1120" cy="900" r="2" opacity="0.55"/>
+    <circle cx="1500" cy="780" r="2" opacity="0.5"/>
+    <circle cx="1060" cy="760" r="1.8" opacity="0.45"/>
+  </g>
+
+  <!-- 火球: 主役のコア（脱彩・小面積） -->
+  <circle cx="1280" cy="742" r="58" fill="#f5d9a8" opacity="0.5"/>
+  <circle cx="1280" cy="742" r="34" fill="#fce9c2" opacity="0.85"/>
+  <circle cx="1280" cy="742" r="22" fill="#FFF6E0"/>
+  <!-- 垂れかけの雫（線香花火らしさ） -->
+  <path d="M1280,796 Q1272,824 1280,842 Q1288,824 1280,796 Z" fill="#f5d9a8" opacity="0.85"/>
+  <circle cx="1280" cy="846" r="7" fill="#FFF6E0" opacity="0.9"/>
+</svg>

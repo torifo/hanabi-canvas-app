@@ -1,0 +1,226 @@
+[
+  {
+    "id": "fw-main",
+    "x": 0.4977,
+    "y": 0.2694,
+    "kind": "sparkler",
+    "intensity": 1.0
+  },
+  {
+    "id": "lantern-L-10",
+    "x": 0.0643,
+    "y": 0.8129,
+    "kind": "lantern",
+    "intensity": 0.84
+  },
+  {
+    "id": "lantern-R-10",
+    "x": 0.9357,
+    "y": 0.8129,
+    "kind": "lantern",
+    "intensity": 0.84
+  },
+  {
+    "id": "fw-right",
+    "x": 0.7539,
+    "y": 0.1819,
+    "kind": "sparkler",
+    "intensity": 0.8
+  },
+  {
+    "id": "fw-left",
+    "x": 0.2695,
+    "y": 0.2361,
+    "kind": "sparkler",
+    "intensity": 0.62
+  },
+  {
+    "id": "lantern-L-42",
+    "x": 0.2075,
+    "y": 0.7811,
+    "kind": "lantern",
+    "intensity": 0.61
+  },
+  {
+    "id": "lantern-R-42",
+    "x": 0.7925,
+    "y": 0.7811,
+    "kind": "lantern",
+    "intensity": 0.61
+  },
+  {
+    "id": "fw-main-rim0",
+    "x": 0.5967,
+    "y": 0.1179,
+    "kind": "sparkler",
+    "intensity": 0.45
+  },
+  {
+    "id": "fw-main-rim1",
+    "x": 0.3904,
+    "y": 0.1961,
+    "kind": "sparkler",
+    "intensity": 0.45
+  },
+  {
+    "id": "fw-main-rim2",
+    "x": 0.5114,
+    "y": 0.4797,
+    "kind": "sparkler",
+    "intensity": 0.45
+  },
+  {
+    "id": "lantern-L-66",
+    "x": 0.315,
+    "y": 0.7573,
+    "kind": "lantern",
+    "intensity": 0.42
+  },
+  {
+    "id": "lantern-R-66",
+    "x": 0.685,
+    "y": 0.7573,
+    "kind": "lantern",
+    "intensity": 0.42
+  },
+  {
+    "id": "star-300-150",
+    "x": 0.1172,
+    "y": 0.1042,
+    "kind": "star",
+    "intensity": 0.42
+  },
+  {
+    "id": "star-2318-122",
+    "x": 0.9055,
+    "y": 0.0847,
+    "kind": "star",
+    "intensity": 0.4
+  },
+  {
+    "id": "star-1012-92",
+    "x": 0.3953,
+    "y": 0.0639,
+    "kind": "star",
+    "intensity": 0.38
+  },
+  {
+    "id": "fw-right-rim0",
+    "x": 0.8118,
+    "y": 0.0932,
+    "kind": "sparkler",
+    "intensity": 0.36
+  },
+  {
+    "id": "fw-right-rim1",
+    "x": 0.6911,
+    "y": 0.139,
+    "kind": "sparkler",
+    "intensity": 0.36
+  },
+  {
+    "id": "fw-right-rim2",
+    "x": 0.762,
+    "y": 0.305,
+    "kind": "sparkler",
+    "intensity": 0.36
+  },
+  {
+    "id": "win-L-2",
+    "x": 0.0602,
+    "y": 0.5519,
+    "kind": "window",
+    "intensity": 0.35
+  },
+  {
+    "id": "win-R-2",
+    "x": 0.9398,
+    "y": 0.5988,
+    "kind": "window",
+    "intensity": 0.35
+  },
+  {
+    "id": "star-1596-122",
+    "x": 0.6234,
+    "y": 0.0847,
+    "kind": "star",
+    "intensity": 0.33
+  },
+  {
+    "id": "trail-a",
+    "x": 0.5672,
+    "y": 0.5,
+    "kind": "sparkler",
+    "intensity": 0.32
+  },
+  {
+    "id": "win-L-4",
+    "x": 0.1949,
+    "y": 0.6272,
+    "kind": "window",
+    "intensity": 0.31
+  },
+  {
+    "id": "win-R-4",
+    "x": 0.8051,
+    "y": 0.6567,
+    "kind": "window",
+    "intensity": 0.31
+  },
+  {
+    "id": "fw-left-rim0",
+    "x": 0.3173,
+    "y": 0.1629,
+    "kind": "sparkler",
+    "intensity": 0.28
+  },
+  {
+    "id": "fw-left-rim1",
+    "x": 0.2177,
+    "y": 0.2007,
+    "kind": "sparkler",
+    "intensity": 0.28
+  },
+  {
+    "id": "fw-left-rim2",
+    "x": 0.2762,
+    "y": 0.3376,
+    "kind": "sparkler",
+    "intensity": 0.28
+  },
+  {
+    "id": "lantern-L-83",
+    "x": 0.3911,
+    "y": 0.7405,
+    "kind": "lantern",
+    "intensity": 0.27
+  },
+  {
+    "id": "lantern-R-83",
+    "x": 0.6089,
+    "y": 0.7405,
+    "kind": "lantern",
+    "intensity": 0.27
+  },
+  {
+    "id": "win-L-6",
+    "x": 0.304,
+    "y": 0.6787,
+    "kind": "window",
+    "intensity": 0.27
+  },
+  {
+    "id": "win-R-6",
+    "x": 0.696,
+    "y": 0.6951,
+    "kind": "window",
+    "intensity": 0.27
+  },
+  {
+    "id": "star-470-470",
+    "x": 0.1836,
+    "y": 0.3264,
+    "kind": "star",
+    "intensity": 0.25
+  }
+]

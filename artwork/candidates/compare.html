@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ベースイラスト候補比較 — 花火と心模様</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e1a;
+    color: #cdd3e0;
+    font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+    padding: 32px 24px 64px;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em; }
+  p.lead { font-size: 13px; color: #8a93a8; margin-bottom: 28px; }
+  .candidate { margin-bottom: 48px; }
+  .candidate h2 {
+    font-size: 15px; font-weight: 600; margin-bottom: 4px; letter-spacing: 0.04em;
+  }
+  .candidate .meta { font-size: 12px; color: #8a93a8; margin-bottom: 12px; }
+  .row { display: flex; gap: 16px; align-items: stretch; }
+  .land {
+    flex: 1; min-width: 0;
+    border-radius: 8px; overflow: hidden; background: #000;
+    border: 1px solid #232a3d;
+  }
+  .land img { display: block; width: 100%; height: auto; }
+  .portrait {
+    flex: 0 0 auto; width: 148px;
+    border-radius: 8px; overflow: hidden; background: #000;
+    border: 1px solid #232a3d;
+    position: relative; aspect-ratio: 9 / 16;
+  }
+  .portrait img {
+    position: absolute; height: 100%; width: auto; max-width: none;
+    left: 50%; transform: translateX(-50%);
+  }
+  .portrait::after {
+    content: "9:16"; position: absolute; right: 6px; bottom: 4px;
+    font-size: 10px; color: #8a93a8;
+  }
+  @media (max-width: 640px) {
+    .row { flex-direction: column; }
+    .portrait { width: 148px; }
+  }
+</style>
+</head>
+<body>
+  <h1>ベースイラスト候補比較</h1>
+  <p class="lead">左: 横長マスター（デスクトップ・壁紙表示）／右: モバイル縦の中央 9:16 トリミング相当。実際のプロダクトではこの上に Bloom・パーティクル・カラーグレーディングが加算されます。フィードバック反映後の新案（④・①改）を先頭に配置。</p>
+
+  <div class="candidate">
+    <h2>案④ 帰り道×点描花火（ハイブリッド・新）</h2>
+    <p class="meta">案③の道・消失点構図を額縁に、参考画像の方向性で点描シェル方式の大玉花火（粒1,772個・二層構造＋金の柳トレイル）を主役に据えた案（制作: Opus）</p>
+    <div class="row">
+      <div class="land"><img src="motif-4-road-hanabi.svg" alt="案4 横長"></div>
+      <div class="portrait"><img src="motif-4-road-hanabi.svg" alt="案4 縦トリミング"></div>
+    </div>
+  </div>
+
+  <div class="candidate">
+    <h2>案①改 手持ち花火クローズアップ（新）</h2>
+    <p class="meta">線香花火の先端へ一気にズームイン。松葉の垂れる火花と火球だけを主役に、背景はピンボケの灯りへ抽象化（制作: Fable）</p>
+    <div class="row">
+      <div class="land"><img src="motif-1b-sparkler-closeup.svg" alt="案1改 横長"></div>
+      <div class="portrait"><img src="motif-1b-sparkler-closeup.svg" alt="案1改 縦トリミング"></div>
+    </div>
+  </div>
+
+  <div class="candidate">
+    <h2>案① 夜の縁側＋手持ち花火</h2>
+    <p class="meta">縁側に腰掛ける後ろ姿と手持ち花火。石灯籠・障子明かり・風鈴・蛍。SPECの「手持ち花火の先端」記述と最も整合（制作: Fable）</p>
+    <div class="row">
+      <div class="land"><img src="motif-1-engawa.svg" alt="案1 横長"></div>
+      <div class="portrait"><img src="motif-1-engawa.svg" alt="案1 縦トリミング"></div>
+    </div>
+  </div>
+
+  <div class="candidate">
+    <h2>案② 海辺の夜＋遠花火</h2>
+    <p class="meta">波打ち際から水平線の遠花火を望む。水面反射が Quiet Mode で活きる。波の環境音と好相性（制作: Opus）</p>
+    <div class="row">
+      <div class="land"><img src="motif-2-seaside.svg" alt="案2 横長"></div>
+      <div class="portrait"><img src="motif-2-seaside.svg" alt="案2 縦トリミング"></div>
+    </div>
+  </div>
+
+  <div class="candidate">
+    <h2>案③ 夏祭りの帰り道</h2>
+    <p class="meta">消失点へ収束する坂道と提灯・街灯の列。発光ポイントが最多で Bloom が最も映える（制作: Sonnet）</p>
+    <div class="row">
+      <div class="land"><img src="motif-3-matsuri.svg" alt="案3 横長"></div>
+      <div class="portrait"><img src="motif-3-matsuri.svg" alt="案3 縦トリミング"></div>
+    </div>
+  </div>
+</body>
+</html>

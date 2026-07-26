@@ -1,0 +1,16 @@
+[
+  { "id": "ember-core",     "x": 0.500, "y": 0.515, "kind": "sparkler", "intensity": 1.0 },
+  { "id": "ember-drop",     "x": 0.500, "y": 0.588, "kind": "sparkler", "intensity": 0.6 },
+  { "id": "spark-tip-n",    "x": 0.495, "y": 0.272, "kind": "sparkler", "intensity": 0.35 },
+  { "id": "spark-tip-ne",   "x": 0.620, "y": 0.403, "kind": "sparkler", "intensity": 0.3 },
+  { "id": "spark-tip-e",    "x": 0.653, "y": 0.536, "kind": "sparkler", "intensity": 0.28 },
+  { "id": "spark-tip-se",   "x": 0.628, "y": 0.657, "kind": "sparkler", "intensity": 0.3 },
+  { "id": "spark-tip-s",    "x": 0.502, "y": 0.811, "kind": "sparkler", "intensity": 0.35 },
+  { "id": "spark-tip-sw",   "x": 0.367, "y": 0.671, "kind": "sparkler", "intensity": 0.3 },
+  { "id": "spark-tip-w",    "x": 0.344, "y": 0.553, "kind": "sparkler", "intensity": 0.28 },
+  { "id": "spark-tip-nw",   "x": 0.370, "y": 0.399, "kind": "sparkler", "intensity": 0.3 },
+  { "id": "bokeh-lantern",  "x": 0.164, "y": 0.715, "kind": "lantern",  "intensity": 0.18 },
+  { "id": "bokeh-window",   "x": 0.930, "y": 0.681, "kind": "window",   "intensity": 0.15 },
+  { "id": "star-faint-1",   "x": 0.695, "y": 0.139, "kind": "star",     "intensity": 0.12 },
+  { "id": "star-faint-2",   "x": 0.129, "y": 0.125, "kind": "star",     "intensity": 0.1 }
+]

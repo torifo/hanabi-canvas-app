@@ -1,0 +1,209 @@
+<svg viewBox="0 0 2560 1440" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 夜空: 深いネイビーのグラデーション。地平線際にわずかな夕残り -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#060b20"/>
+      <stop offset="0.30" stop-color="#0b142e"/>
+      <stop offset="0.55" stop-color="#101c3e"/>
+      <stop offset="0.74" stop-color="#182750"/>
+      <stop offset="0.88" stop-color="#22335f"/>
+      <stop offset="1"    stop-color="#2c3e6b"/>
+    </linearGradient>
+    <!-- 遠景の山なみ -->
+    <linearGradient id="hills" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c1330"/>
+      <stop offset="1" stop-color="#080e24"/>
+    </linearGradient>
+    <!-- 庭の茂み -->
+    <linearGradient id="shrub" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1128"/>
+      <stop offset="1" stop-color="#060b1c"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#070c1e"/>
+      <stop offset="1" stop-color="#040814"/>
+    </linearGradient>
+    <!-- 縁側の板 -->
+    <linearGradient id="porch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#221712"/>
+      <stop offset="0.45" stop-color="#1b110d"/>
+      <stop offset="1"    stop-color="#120b08"/>
+    </linearGradient>
+    <!-- 軒下の陰 -->
+    <linearGradient id="eave" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#02040c"/>
+      <stop offset="1" stop-color="#04060f"/>
+    </linearGradient>
+    <!-- 障子の明かり（控えめな暖色・LDR内） -->
+    <linearGradient id="shoji" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"   stop-color="#8a6238"/>
+      <stop offset="0.5" stop-color="#a87b4e"/>
+      <stop offset="1"   stop-color="#7a5530"/>
+    </linearGradient>
+    <!-- 手持ち花火の光暈（発光は後段コードが担う。ここは気配のみ） -->
+    <radialGradient id="sparklerHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#e8a860" stop-opacity="0.32"/>
+      <stop offset="0.45" stop-color="#c9803f" stop-opacity="0.14"/>
+      <stop offset="1"    stop-color="#c9803f" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 花火が板間に落とす照り返し -->
+    <radialGradient id="porchGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#b06f36" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#b06f36" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 石灯籠の小さな灯 -->
+    <radialGradient id="lanternGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#c99a54" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#c99a54" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ===== 空 ===== -->
+  <rect x="0" y="0" width="2560" height="820" fill="url(#sky)"/>
+
+  <!-- 星: 中心部ほど疎に、上空ほど密に -->
+  <g fill="#c9cede">
+    <circle cx="190" cy="130" r="3" opacity="0.85"/>
+    <circle cx="360" cy="260" r="2" opacity="0.6"/>
+    <circle cx="520" cy="90"  r="2.6" opacity="0.75"/>
+    <circle cx="700" cy="200" r="2" opacity="0.5"/>
+    <circle cx="840" cy="330" r="2.2" opacity="0.55"/>
+    <circle cx="960" cy="120" r="3.2" opacity="0.9"/>
+    <circle cx="1120" cy="240" r="2" opacity="0.5"/>
+    <circle cx="1300" cy="160" r="2.4" opacity="0.7"/>
+    <circle cx="1480" cy="300" r="2" opacity="0.45"/>
+    <circle cx="1560" cy="90"  r="2.8" opacity="0.8"/>
+    <circle cx="1740" cy="220" r="2" opacity="0.55"/>
+    <circle cx="2210" cy="140" r="3" opacity="0.85"/>
+    <circle cx="2360" cy="320" r="2.2" opacity="0.6"/>
+    <circle cx="2470" cy="90"  r="2.4" opacity="0.7"/>
+    <circle cx="1900" cy="420" r="2" opacity="0.4"/>
+    <circle cx="450" cy="440" r="2" opacity="0.4"/>
+    <circle cx="1180" cy="430" r="1.8" opacity="0.35"/>
+    <circle cx="2050" cy="520" r="1.8" opacity="0.3"/>
+    <circle cx="150" cy="560" r="1.8" opacity="0.3"/>
+    <circle cx="760" cy="540" r="1.8" opacity="0.35"/>
+  </g>
+  <g fill="#d6cfbc">
+    <circle cx="1050" cy="180" r="2.2" opacity="0.6"/>
+    <circle cx="1660" cy="150" r="2" opacity="0.55"/>
+    <circle cx="300" cy="360" r="2" opacity="0.5"/>
+  </g>
+
+  <!-- 三日月（控えめな明度） -->
+  <g>
+    <circle cx="2040" cy="250" r="46" fill="#c4c9da"/>
+    <circle cx="2062" cy="236" r="44" fill="#0b142e"/>
+  </g>
+
+  <!-- ===== 遠景の山なみ・遠い町明かり ===== -->
+  <path d="M0,700 Q300,640 560,690 T1100,670 Q1400,630 1700,680 T2260,660 Q2420,650 2560,690 L2560,820 L0,820 Z" fill="url(#hills)"/>
+  <g fill="#a57c4e">
+    <rect x="410" y="742" width="7" height="5" opacity="0.55"/>
+    <rect x="1520" y="730" width="6" height="5" opacity="0.45"/>
+    <rect x="1560" y="738" width="5" height="4" opacity="0.4"/>
+    <rect x="2180" y="726" width="6" height="5" opacity="0.5"/>
+  </g>
+
+  <!-- ===== 庭 ===== -->
+  <rect x="0" y="800" width="2560" height="340" fill="url(#grass)"/>
+  <!-- 茂みのシルエット層 -->
+  <path d="M0,860 Q160,790 340,845 Q470,800 620,850 Q760,815 900,855 Q940,930 900,1100 L0,1100 Z" fill="url(#shrub)"/>
+  <path d="M1650,865 Q1800,805 1980,850 Q2140,810 2300,855 Q2430,825 2560,860 L2560,1100 L1650,1100 Q1615,940 1650,865 Z" fill="url(#shrub)"/>
+  <path d="M980,905 Q1120,860 1290,900 Q1440,868 1590,905 Q1620,1000 1590,1100 L980,1100 Q950,1000 980,905 Z" fill="#081020"/>
+
+  <!-- 石灯籠（左・脇役） -->
+  <g>
+    <ellipse cx="650" cy="1010" rx="58" ry="12" fill="#050912"/>
+    <rect x="632" y="900" width="36" height="106" fill="#0a1122"/>
+    <path d="M600,900 L700,900 L682,862 L618,862 Z" fill="#0c1428"/>
+    <rect x="622" y="862" width="56" height="14" fill="#0a1122"/>
+    <path d="M596,862 Q650,820 704,862 Z" fill="#0e1730"/>
+    <circle cx="650" cy="884" r="52" fill="url(#lanternGlow)"/>
+    <rect x="638" y="874" width="24" height="18" rx="3" fill="#c99a54" opacity="0.85"/>
+    <rect x="645" y="878" width="10" height="10" rx="2" fill="#f2dcae"/>
+  </g>
+
+  <!-- 庭の蛍（かすかな点） -->
+  <circle cx="1080" cy="940" r="4" fill="#d8c493" opacity="0.65"/>
+  <circle cx="1560" cy="985" r="3.4" fill="#d8c493" opacity="0.5"/>
+  <circle cx="880" cy="1005" r="3" fill="#cdb887" opacity="0.45"/>
+
+  <!-- ===== 縁側 ===== -->
+  <!-- 縁石・沓脱石 -->
+  <ellipse cx="1500" cy="1130" rx="130" ry="24" fill="#0a0e1c"/>
+  <!-- 板間 -->
+  <rect x="0" y="1100" width="2560" height="340" fill="url(#porch)"/>
+  <!-- 板の目地（遠近で間隔を詰める） -->
+  <g stroke="#0c0705" stroke-width="4" opacity="0.8">
+    <line x1="0" y1="1136" x2="2560" y2="1128"/>
+    <line x1="0" y1="1188" x2="2560" y2="1178"/>
+    <line x1="0" y1="1252" x2="2560" y2="1244"/>
+    <line x1="0" y1="1330" x2="2560" y2="1324"/>
+  </g>
+  <g stroke="#2a1c14" stroke-width="1.5" opacity="0.35">
+    <line x1="0" y1="1160" x2="2560" y2="1152"/>
+    <line x1="0" y1="1290" x2="2560" y2="1284"/>
+    <line x1="0" y1="1392" x2="2560" y2="1388"/>
+  </g>
+  <!-- 花火の照り返し -->
+  <ellipse cx="1400" cy="1150" rx="360" ry="90" fill="url(#porchGlow)"/>
+
+  <!-- ===== 家屋（右） ===== -->
+  <!-- 障子の明かり -->
+  <g>
+    <rect x="2380" y="640" width="180" height="470" fill="url(#shoji)"/>
+    <g stroke="#3c2a18" stroke-width="8">
+      <line x1="2380" y1="760" x2="2560" y2="760"/>
+      <line x1="2380" y1="880" x2="2560" y2="880"/>
+      <line x1="2380" y1="1000" x2="2560" y2="1000"/>
+      <line x1="2470" y1="640" x2="2470" y2="1110"/>
+    </g>
+  </g>
+  <!-- 柱 -->
+  <rect x="2310" y="120" width="58" height="1000" fill="#0a0705"/>
+  <!-- 軒 -->
+  <path d="M0,0 L2560,0 L2560,150 L1800,132 Q900,118 0,140 Z" fill="url(#eave)"/>
+
+  <!-- 風鈴（軒先） -->
+  <g>
+    <line x1="1902" y1="128" x2="1902" y2="208" stroke="#060a16" stroke-width="3"/>
+    <path d="M1878,208 Q1902,186 1926,208 L1918,238 Q1902,246 1886,238 Z" fill="#0d1224"/>
+    <circle cx="1912" cy="214" r="3.5" fill="#e8e4d8" opacity="0.9"/>
+    <line x1="1902" y1="240" x2="1902" y2="268" stroke="#060a16" stroke-width="2"/>
+    <rect x="1892" y="268" width="20" height="58" rx="3" fill="#39456d" opacity="0.9"/>
+  </g>
+
+  <!-- ===== 人物（後ろ姿・縁側に腰掛ける） ===== -->
+  <g fill="#05070f">
+    <!-- 体（浴衣） -->
+    <path d="M1058,1136
+             Q1050,1010 1082,952
+             Q1100,918 1136,912
+             Q1174,918 1190,952
+             Q1218,1008 1206,1136 Z"/>
+    <!-- 頭 -->
+    <circle cx="1134" cy="878" r="46"/>
+    <!-- 右腕: 花火を差し出す -->
+    <path d="M1188,970 Q1268,942 1330,918 L1338,936 Q1276,962 1200,992 Z"/>
+  </g>
+  <!-- 帯のかすかな色 -->
+  <path d="M1064,1026 Q1136,1042 1202,1026 L1200,1054 Q1136,1068 1066,1054 Z" fill="#2c3050" opacity="0.9"/>
+
+  <!-- ===== 手持ち花火 ===== -->
+  <line x1="1334" y1="926" x2="1408" y2="884" stroke="#241a12" stroke-width="7" stroke-linecap="round"/>
+  <!-- 光暈（気配のみ・実発光はコード側） -->
+  <circle cx="1414" cy="880" r="150" fill="url(#sparklerHalo)"/>
+  <!-- コア: 脱彩した明色・小面積 -->
+  <circle cx="1414" cy="880" r="11" fill="#FFF6E0"/>
+  <circle cx="1414" cy="880" r="20" fill="#f5d9a8" opacity="0.5"/>
+  <!-- 散り火の粒（控えめに数点） -->
+  <g fill="#f5e6c8">
+    <circle cx="1452" cy="846" r="4" opacity="0.8"/>
+    <circle cx="1380" cy="838" r="3.4" opacity="0.7"/>
+    <circle cx="1462" cy="912" r="3.6" opacity="0.75"/>
+    <circle cx="1358" cy="918" r="3" opacity="0.6"/>
+    <circle cx="1430" cy="948" r="2.8" opacity="0.55"/>
+    <circle cx="1478" cy="878" r="2.6" opacity="0.5"/>
+  </g>
+</svg>

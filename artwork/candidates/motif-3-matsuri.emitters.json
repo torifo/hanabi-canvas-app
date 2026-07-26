@@ -1,0 +1,331 @@
+[
+  {
+    "id": "lantern_L_0",
+    "x": 0.0155,
+    "y": 0.8887,
+    "kind": "lantern",
+    "intensity": 1.0
+  },
+  {
+    "id": "lantern_R_0",
+    "x": 0.9845,
+    "y": 0.8887,
+    "kind": "lantern",
+    "intensity": 1.0
+  },
+  {
+    "id": "lantern_L_1",
+    "x": 0.0746,
+    "y": 0.8461,
+    "kind": "lantern",
+    "intensity": 0.91
+  },
+  {
+    "id": "lantern_R_1",
+    "x": 0.9254,
+    "y": 0.8461,
+    "kind": "lantern",
+    "intensity": 0.91
+  },
+  {
+    "id": "lantern_L_2",
+    "x": 0.1338,
+    "y": 0.8034,
+    "kind": "lantern",
+    "intensity": 0.81
+  },
+  {
+    "id": "lantern_R_2",
+    "x": 0.8662,
+    "y": 0.8034,
+    "kind": "lantern",
+    "intensity": 0.81
+  },
+  {
+    "id": "lantern_L_3",
+    "x": 0.1929,
+    "y": 0.7608,
+    "kind": "lantern",
+    "intensity": 0.72
+  },
+  {
+    "id": "lantern_R_3",
+    "x": 0.8071,
+    "y": 0.7608,
+    "kind": "lantern",
+    "intensity": 0.72
+  },
+  {
+    "id": "lantern_L_4",
+    "x": 0.2521,
+    "y": 0.7181,
+    "kind": "lantern",
+    "intensity": 0.63
+  },
+  {
+    "id": "lantern_R_4",
+    "x": 0.7479,
+    "y": 0.7181,
+    "kind": "lantern",
+    "intensity": 0.63
+  },
+  {
+    "id": "lantern_L_5",
+    "x": 0.3112,
+    "y": 0.6755,
+    "kind": "lantern",
+    "intensity": 0.54
+  },
+  {
+    "id": "lantern_R_5",
+    "x": 0.6888,
+    "y": 0.6755,
+    "kind": "lantern",
+    "intensity": 0.54
+  },
+  {
+    "id": "lantern_L_6",
+    "x": 0.3704,
+    "y": 0.6328,
+    "kind": "lantern",
+    "intensity": 0.44
+  },
+  {
+    "id": "lantern_R_6",
+    "x": 0.6296,
+    "y": 0.6328,
+    "kind": "lantern",
+    "intensity": 0.44
+  },
+  {
+    "id": "lantern_L_7",
+    "x": 0.4295,
+    "y": 0.5901,
+    "kind": "lantern",
+    "intensity": 0.35
+  },
+  {
+    "id": "lantern_R_7",
+    "x": 0.5705,
+    "y": 0.5901,
+    "kind": "lantern",
+    "intensity": 0.35
+  },
+  {
+    "id": "streetlight_0",
+    "x": 0.065,
+    "y": 0.7501,
+    "kind": "streetlight",
+    "intensity": 0.9
+  },
+  {
+    "id": "streetlight_1",
+    "x": 0.8438,
+    "y": 0.7054,
+    "kind": "streetlight",
+    "intensity": 0.75
+  },
+  {
+    "id": "streetlight_2",
+    "x": 0.2475,
+    "y": 0.6607,
+    "kind": "streetlight",
+    "intensity": 0.6
+  },
+  {
+    "id": "streetlight_3",
+    "x": 0.6613,
+    "y": 0.616,
+    "kind": "streetlight",
+    "intensity": 0.45
+  },
+  {
+    "id": "streetlight_4",
+    "x": 0.4299,
+    "y": 0.5713,
+    "kind": "streetlight",
+    "intensity": 0.3
+  },
+  {
+    "id": "window_L_1_0",
+    "x": 0.044,
+    "y": 0.8286,
+    "kind": "window",
+    "intensity": 0.53
+  },
+  {
+    "id": "window_L_1_1",
+    "x": 0.044,
+    "y": 0.7843,
+    "kind": "window",
+    "intensity": 0.53
+  },
+  {
+    "id": "window_R_1_0",
+    "x": 0.956,
+    "y": 0.8286,
+    "kind": "window",
+    "intensity": 0.53
+  },
+  {
+    "id": "window_R_1_1",
+    "x": 0.956,
+    "y": 0.7843,
+    "kind": "window",
+    "intensity": 0.53
+  },
+  {
+    "id": "window_L_2_0",
+    "x": 0.1105,
+    "y": 0.7817,
+    "kind": "window",
+    "intensity": 0.47
+  },
+  {
+    "id": "window_L_2_1",
+    "x": 0.1105,
+    "y": 0.7428,
+    "kind": "window",
+    "intensity": 0.47
+  },
+  {
+    "id": "window_R_2_0",
+    "x": 0.8895,
+    "y": 0.7817,
+    "kind": "window",
+    "intensity": 0.47
+  },
+  {
+    "id": "window_R_2_1",
+    "x": 0.8895,
+    "y": 0.7428,
+    "kind": "window",
+    "intensity": 0.47
+  },
+  {
+    "id": "window_L_3_0",
+    "x": 0.1769,
+    "y": 0.718,
+    "kind": "window",
+    "intensity": 0.4
+  },
+  {
+    "id": "window_R_3_0",
+    "x": 0.8231,
+    "y": 0.718,
+    "kind": "window",
+    "intensity": 0.4
+  },
+  {
+    "id": "window_L_4_0",
+    "x": 0.2433,
+    "y": 0.6737,
+    "kind": "window",
+    "intensity": 0.33
+  },
+  {
+    "id": "window_R_4_0",
+    "x": 0.7567,
+    "y": 0.6737,
+    "kind": "window",
+    "intensity": 0.33
+  },
+  {
+    "id": "star_7",
+    "x": 0.8312,
+    "y": 0.229,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_15",
+    "x": 0.9666,
+    "y": 0.2411,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_17",
+    "x": 0.3241,
+    "y": 0.117,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_20",
+    "x": 0.5585,
+    "y": 0.1154,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_24",
+    "x": 0.9729,
+    "y": 0.2041,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_28",
+    "x": 0.5006,
+    "y": 0.0873,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_31",
+    "x": 0.024,
+    "y": 0.1358,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_35",
+    "x": 0.4764,
+    "y": 0.211,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_36",
+    "x": 0.4267,
+    "y": 0.0984,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_37",
+    "x": 0.2152,
+    "y": 0.1317,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_40",
+    "x": 0.0911,
+    "y": 0.2381,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "star_41",
+    "x": 0.8428,
+    "y": 0.0514,
+    "kind": "star",
+    "intensity": 0.5
+  },
+  {
+    "id": "firework_main",
+    "x": 0.5,
+    "y": 0.2083,
+    "kind": "star",
+    "intensity": 1.0
+  },
+  {
+    "id": "firework_sub",
+    "x": 0.6953,
+    "y": 0.1458,
+    "kind": "star",
+    "intensity": 0.75
+  }
+]

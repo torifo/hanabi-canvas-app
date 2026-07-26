@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イントロ遷移コンセプト — 花火と心模様</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #05091c; }
+
+  /* ===== メイン（遷移先: 夜のキャンバス仮置き） ===== */
+  #main {
+    position: absolute; inset: 0;
+    background: #05091c;
+  }
+  #main img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transform: scale(1.06);
+    transition: transform 2.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  body.entered #main img { transform: scale(1); }
+
+  /* ===== イントロ（紙の質感） ===== */
+  #intro {
+    position: absolute; inset: 0;
+    background: #f7f5f0;
+    cursor: pointer;
+    transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  body.entered #intro { opacity: 0; pointer-events: none; }
+  #intro .paper {
+    position: absolute; inset: 0; opacity: 0.5; pointer-events: none;
+  }
+
+  /* 縦組みタイトル: 段違いの2列＋細い罫 */
+  .title {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: row-reverse; gap: 4.5vmin;
+    color: #b7b2a6;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    font-weight: 300;
+    letter-spacing: 0.42em;
+    user-select: none;
+  }
+  .title .col {
+    font-size: 6.2vmin;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .title .col span { writing-mode: vertical-rl; }
+  .title .col .rule {
+    width: 1px; background: #d4cfc2;
+    margin: 1.6vmin 0;
+  }
+  .title .col .hanabi { margin-bottom: 0.6vmin; }
+  .col1 { padding-top: 11vmin; }
+  .col2 { padding-top: 0; }
+
+  /* 誘導文（遅れて淡く出る） */
+  .hint {
+    position: absolute; bottom: 9vh; left: 50%;
+    transform: translateX(-50%);
+    color: #c2bdb0;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-size: 1.9vmin; letter-spacing: 0.5em; text-indent: 0.5em;
+    opacity: 0;
+    animation: hint-in 2.4s ease 3.2s forwards;
+    user-select: none;
+  }
+  @keyframes hint-in { to { opacity: 0.8; } }
+</style>
+</head>
+<body>
+  <div id="main">
+    <img src="candidates/motif-1b-sparkler-closeup.svg" alt="夜のキャンバス">
+  </div>
+
+  <div id="intro" aria-label="触れて入る">
+    <!-- 紙のごく淡い質感 -->
+    <svg class="paper" width="100%" height="100%">
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.54  0 0 0 0 0.50  0 0 0 0.04 0"/>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#grain)"/>
+    </svg>
+
+    <div class="title">
+      <div class="col col1">
+        <svg class="hanabi" width="52" height="52" viewBox="0 0 52 52">
+          <g stroke="#c9c4b6" stroke-width="1" fill="none" stroke-linecap="round">
+            <path d="M26,26 L26,6 M26,26 L40,10 M26,26 L46,22 M26,26 L44,36 M26,26 L34,44 M26,26 L18,44 M26,26 L8,36 M26,26 L6,22 M26,26 L12,10"/>
+          </g>
+          <g fill="#c9c4b6">
+            <circle cx="26" cy="6" r="1.4"/><circle cx="40" cy="10" r="1.2"/><circle cx="46" cy="22" r="1.2"/>
+            <circle cx="44" cy="36" r="1.2"/><circle cx="34" cy="44" r="1.2"/><circle cx="18" cy="44" r="1.2"/>
+            <circle cx="8" cy="36" r="1.2"/><circle cx="6" cy="22" r="1.2"/><circle cx="12" cy="10" r="1.2"/>
+          </g>
+        </svg>
+        <span>花火と</span>
+        <div class="rule" style="height:16vmin"></div>
+      </div>
+      <div class="col col2">
+        <svg class="hanabi" width="38" height="38" viewBox="0 0 52 52">
+          <g stroke="#cfcabd" stroke-width="1" fill="none" stroke-linecap="round">
+            <path d="M26,26 L26,8 M26,26 L38,12 M26,26 L44,24 M26,26 L40,38 M26,26 L26,44 M26,26 L12,38 M26,26 L8,24 M26,26 L14,12"/>
+          </g>
+          <g fill="#cfcabd">
+            <circle cx="26" cy="8" r="1.2"/><circle cx="44" cy="24" r="1.1"/><circle cx="26" cy="44" r="1.1"/><circle cx="8" cy="24" r="1.1"/>
+          </g>
+        </svg>
+        <span>心模様</span>
+        <div class="rule" style="height:22vmin"></div>
+      </div>
+    </div>
+
+    <p class="hint">そっとふれて、夜へ</p>
+  </div>
+
+  <script>
+    document.getElementById('intro').addEventListener('pointerdown', () => {
+      document.body.classList.add('entered');
+      // 実装時はここで SoundEngine.init() を呼ぶ（autoplay制約の解除起点）
+    }, { once: true });
+  </script>
+</body>
+</html>
