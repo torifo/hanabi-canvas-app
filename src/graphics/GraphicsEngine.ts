@@ -43,6 +43,8 @@ const FAR_LIMIT = 24;
 const SHELL_R = 18;
 const SHELL_Y = DECK_Y - 34;
 const SHELL_X_RATIO = 0.2;
+// PCサイズ（横長）では、青と赤の大輪の外側に1つずつ対称に置く
+const SHELL_FLANK_OFFSET = 150;
 
 interface MessageBloom {
   record: MessageRecord;
@@ -162,7 +164,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
   private portrait = false;
   private hover: { x: number; y: number; dragging: boolean } | null = null;
   private messages: MessageBloom[] = [];
-  private shellHoverA = 0;
+  private shellHoverA: number[] = [];
   // タップ端末では pointermove が来ないため、触れた花火のラベルを一定時間出す
   private pinned: { id: string; until: number } | null = null;
   private dismissHit: { x: number; y: number; w: number; h: number; id: string } | null = null;
@@ -309,15 +311,34 @@ export class GraphicsEngine implements GraphicsEngineContract {
 
   // ---- メッセージ花火 ----
 
-  private get shell(): { x: number; y: number; r: number } {
+  /**
+   * 打ち上げ前の玉。横長では青と赤の大輪の外側へ1つずつ対称に置き、
+   * 縦では帯が狭いため1つだけにする。x は可視範囲から求める
+   * （固定座標だと画面比率によっては cover クロップで画面外へ出てしまう）
+   */
+  private get shells(): Array<{ x: number; y: number; r: number; tint: string }> {
     const view = this.visibleScene();
     const margin = SHELL_R * 2.4;
-    const x = view.minX + (view.maxX - view.minX) * SHELL_X_RATIO;
-    return {
-      x: Math.min(Math.max(x, view.minX + margin), view.maxX - margin),
-      y: Math.min(Math.max(SHELL_Y, view.minY + margin), view.maxY - margin),
-      r: SHELL_R
-    };
+    const clampX = (x: number) => Math.min(Math.max(x, view.minX + margin), view.maxX - margin);
+    const y = Math.min(Math.max(SHELL_Y, view.minY + margin), view.maxY - margin);
+    const moodTint = this.moodMix > 0.5 ? '#8DE3E2' : null;
+
+    if (this.portrait) {
+      const x = clampX(view.minX + (view.maxX - view.minX) * SHELL_X_RATIO);
+      return [{ x, y, r: SHELL_R, tint: moodTint ?? '#FFA487' }];
+    }
+
+    // 左右それぞれ、隣り合う大輪の色を淡く帯びさせて対に見せる
+    const blue = this.clouds[0];
+    const red = this.clouds[1];
+    const leftX = clampX((blue?.fx ?? 372) - SHELL_FLANK_OFFSET);
+    const rightX = clampX((red?.fx ?? 1068) + SHELL_FLANK_OFFSET);
+    const pair = [
+      { x: leftX, y, r: SHELL_R, tint: moodTint ?? (blue?.flare ?? '#5AA8FF') },
+      { x: rightX, y, r: SHELL_R, tint: moodTint ?? (red?.flare ?? '#FF6E6E') }
+    ];
+    // 可視範囲が狭くて重なる場合は1つに畳む
+    return Math.abs(rightX - leftX) < SHELL_R * 5 ? [pair[0]!] : pair;
   }
 
   /** cover クロップで実際に見えているシーン座標の範囲 */
@@ -332,9 +353,8 @@ export class GraphicsEngine implements GraphicsEngineContract {
   }
 
   isShellAt(x: number, y: number): boolean {
-    const shell = this.shell;
     // 指でも押しやすいよう、見た目より広めに取る
-    return Math.hypot(x * W - shell.x, y * H - shell.y) <= shell.r * 2.6;
+    return this.shells.some((shell) => Math.hypot(x * W - shell.x, y * H - shell.y) <= shell.r * 2.6);
   }
 
   setMessages(records: readonly MessageRecord[]): void {
@@ -1011,7 +1031,11 @@ export class GraphicsEngine implements GraphicsEngineContract {
         bloom.rise = Math.min(1, bloom.rise + (dtf * 16.7) / RISE_DURATION_MS);
         // 昇りきった瞬間を開花の起点にする（そうしないと自分の1発だけ開花が省かれる）
         if (bloom.rise >= 1) bloom.bornAt = now;
-        const shell = this.shell;
+        const shells = this.shells;
+        let shell = shells[0]!;
+        for (const candidate of shells) {
+          if (Math.abs(candidate.x - bloom.x) < Math.abs(shell.x - bloom.x)) shell = candidate;
+        }
         const e = 1 - Math.pow(1 - bloom.rise, 3);
         const rx = shell.x + (bloom.x - shell.x) * e;
         const ry = shell.y + (bloom.y - shell.y) * e;
@@ -1078,18 +1102,31 @@ export class GraphicsEngine implements GraphicsEngineContract {
     }
   }
 
-  /** 橋のたもとの打ち上げ前の玉。玉貼りの紙を貼り重ねた球＋提げ紐 */
+  /** 打ち上げ前の玉。玉貼りの紙を貼り重ねた球＋提げ紐 */
   private drawShell(ctx: CanvasRenderingContext2D, now: number, dtf: number): void {
-    const shell = this.shell;
+    const shells = this.shells;
     const hover = this.hover;
-    const over = hover ? Math.hypot(hover.x - shell.x, hover.y - shell.y) <= shell.r * 2.6 : false;
-    this.shellHoverA += ((over ? 1 : 0) - this.shellHoverA) * Math.min(1, dtf * 0.1);
+    if (this.shellHoverA.length !== shells.length) {
+      this.shellHoverA = shells.map((_, index) => this.shellHoverA[index] ?? 0);
+    }
+    shells.forEach((shell, index) => {
+      const over = hover ? Math.hypot(hover.x - shell.x, hover.y - shell.y) <= shell.r * 2.6 : false;
+      const eased = (this.shellHoverA[index] ?? 0) + ((over ? 1 : 0) - (this.shellHoverA[index] ?? 0)) * Math.min(1, dtf * 0.1);
+      this.shellHoverA[index] = eased;
+      this.paintShell(ctx, shell, eased, now);
+    });
+  }
 
-    const lift = this.shellHoverA * 7;
+  private paintShell(
+    ctx: CanvasRenderingContext2D,
+    shell: { x: number; y: number; r: number; tint: string },
+    hoverA: number,
+    now: number
+  ): void {
+    const lift = hoverA * 7;
     const y = shell.y - lift;
     const r = shell.r;
-    const breathe = 0.55 + 0.45 * Math.sin(now * 0.0015);
-    const tint = this.moodMix > 0.5 ? '#8DE3E2' : '#FFA487';
+    const breathe = 0.55 + 0.45 * Math.sin(now * 0.0015 + shell.x);
 
     // 直前の描画が残した合成状態を必ず断ち切る（これを怠ると玉が沈む）
     ctx.save();
@@ -1099,14 +1136,14 @@ export class GraphicsEngine implements GraphicsEngineContract {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = 'rgba(3,6,12,0.55)';
     ctx.beginPath();
-    ctx.ellipse(shell.x, shell.y + r * 0.9, r * (0.95 - this.shellHoverA * 0.18), r * 0.22, 0, 0, Math.PI * 2);
+    ctx.ellipse(shell.x, shell.y + r * 0.9, r * (0.95 - hoverA * 0.18), r * 0.22, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 触れられることが分かる程度のごく淡い光
+    // 隣り合う大輪の色をまとった、触れられると分かる程度の光
     ctx.globalCompositeOperation = 'lighter';
-    const haloR = r * (2.9 + this.shellHoverA * 1.5);
+    const haloR = r * (2.9 + hoverA * 1.5);
     const halo = ctx.createRadialGradient(shell.x, y, r * 0.7, shell.x, y, haloR);
-    halo.addColorStop(0, rgba(tint, 0.1 + 0.06 * breathe + 0.24 * this.shellHoverA));
+    halo.addColorStop(0, rgba(shell.tint, 0.1 + 0.06 * breathe + 0.24 * hoverA));
     halo.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(shell.x - haloR, y - haloR, haloR * 2, haloR * 2);
@@ -1178,7 +1215,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
 
     // 紙らしい広く弱いハイライト
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.16 + 0.16 * this.shellHoverA;
+    ctx.globalAlpha = 0.16 + 0.16 * hoverA;
     const gloss = ctx.createRadialGradient(shell.x - r * 0.36, y - r * 0.42, 0, shell.x - r * 0.36, y - r * 0.42, r * 0.82);
     gloss.addColorStop(0, 'rgba(255,246,224,0.85)');
     gloss.addColorStop(1, 'rgba(255,246,224,0)');
