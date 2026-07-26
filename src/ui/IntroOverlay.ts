@@ -2,7 +2,7 @@ import type { IntroOverlay as IntroOverlayContract } from '../types';
 
 const EXIT_DURATION_MS = 1800;
 // タップがなくても自動で夜へ入る（音はその後の最初のタップで初期化される）
-const AUTO_ENTER_MS = 5000;
+const AUTO_ENTER_MS = 3000;
 
 export class IntroOverlay implements IntroOverlayContract {
   private readonly enterCallbacks: Array<() => void> = [];

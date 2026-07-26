@@ -17,7 +17,9 @@ export interface GraphicsEngine {
   // SparkMessage の x, y はこの座標系で送受信する
   toSceneCoords(clientX: number, clientY: number): { x: number; y: number };
   setMood(profile: MoodProfile): void;
-  emitSpark(x: number, y: number, charge: number): void;
+  // 火花を放てたら true。常駐の輪の上など、火花にならなかった場合は false
+  // （呼び出し側はこの結果を見て気配の送信可否を決める）
+  emitSpark(x: number, y: number, charge: number): boolean;
   emitRemoteSpark(x: number, y: number): void;
   beginCharge(x: number, y: number): void;
   endCharge(): number;

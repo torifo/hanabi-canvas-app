@@ -107,8 +107,9 @@ class AppCore {
     event.preventDefault();
     const { x, y } = this.dependencies.graphics.toSceneCoords(event.clientX, event.clientY);
     const charge = this.dependencies.graphics.endCharge();
-    this.dependencies.graphics.emitSpark(x, y, charge);
-    this.dependencies.presence.sendSpark(x, y);
+    // 自分の画面で火花にならなかったタップ（常駐の輪の上）は他の人へも送らない
+    const launched = this.dependencies.graphics.emitSpark(x, y, charge);
+    if (launched) this.dependencies.presence.sendSpark(x, y);
     void this.ensureSound().then(() => this.dependencies.sound.playSparkle());
     this.releasePointer(event.pointerId);
   };

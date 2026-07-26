@@ -195,16 +195,17 @@ export class GraphicsEngine implements GraphicsEngineContract {
     this.moodTarget = profile.id === 'quiet' ? 1 : 0;
   }
 
-  emitSpark(x: number, y: number, charge: number): void {
+  emitSpark(x: number, y: number, charge: number): boolean {
     const sx = x * W;
     const sy = y * H;
     // 常駐輪の上では火花を出さない（かぶり防止）。代わりにその輪をパルスさせる
     const hit = this.cloudAt(sx, sy);
     if (hit) {
       hit.pulseT0 = performance.now();
-      return;
+      return false;
     }
     this.burst(sx, sy, 0.35 + charge * 0.65, false);
+    return true;
   }
 
   emitRemoteSpark(x: number, y: number): void {
