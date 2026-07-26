@@ -21,7 +21,7 @@ export class ComposeOverlay {
     form.hidden = true;
     form.setAttribute('aria-label', '花火に言葉を込める');
     form.innerHTML = `
-      <p class="compose__label">言葉を込めて、放つ</p>
+      <p class="compose__label">言葉を込めて、打ち上げる</p>
       <div class="compose__row">
         <input class="compose__input" type="text" maxlength="${MAX_MESSAGE_LENGTH * 2}"
                autocomplete="off" enterkeyhint="send" placeholder="そっとひとこと" />
