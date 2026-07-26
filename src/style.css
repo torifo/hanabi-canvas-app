@@ -310,6 +310,127 @@ input {
   font-variant-numeric: tabular-nums;
 }
 
+/* 打ち上げ前の玉から開く入力欄 */
+/* display の指定は UA の [hidden]{display:none} を上書きしてしまうため、
+   閉状態を明示する。これが無いと不可視のまま画面下中央のタップを奪う */
+.compose[hidden] {
+  display: none;
+}
+
+.compose {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 4.5rem);
+  left: 50%;
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  pointer-events: auto;
+  transform: translate(-50%, 0.6rem);
+  opacity: 0;
+  transition: opacity 420ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.compose.is-open {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.compose__label {
+  margin: 0;
+  color: var(--muted);
+  font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+}
+
+.compose__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.compose__input {
+  width: min(19rem, 60vw);
+  min-height: 44px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--paper);
+  background: rgba(3, 10, 20, 0.5);
+  letter-spacing: 0.06em;
+}
+
+.compose__input::placeholder {
+  color: var(--muted);
+}
+
+.compose__input:focus-visible {
+  border-color: color-mix(in srgb, var(--glow) 46%, transparent);
+  outline: none;
+}
+
+.compose__send {
+  min-height: 44px;
+  padding: 0.5rem 1.15rem;
+  border: 0;
+  border-radius: 999px;
+  color: #17202d;
+  background: var(--paper);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--glow) 24%, transparent);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: opacity 220ms ease;
+}
+
+.compose__send:disabled {
+  opacity: 0.34;
+  box-shadow: none;
+  cursor: default;
+}
+
+.compose__close {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.compose__counter {
+  margin: 0;
+  color: var(--muted);
+  font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.compose__counter.is-over {
+  color: color-mix(in srgb, var(--glow) 70%, #ffffff);
+}
+
+@media (max-width: 520px) {
+  .compose {
+    bottom: calc(var(--safe-bottom) + 3.5rem);
+  }
+
+  .compose__input {
+    width: min(14rem, 52vw);
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

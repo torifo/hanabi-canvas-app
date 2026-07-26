@@ -2,6 +2,8 @@ import { SoundEngine } from './audio/SoundEngine';
 import { GraphicsEngine } from './graphics/GraphicsEngine';
 import { HanabiSchedule } from './realtime/HanabiSchedule';
 import { PresenceClient } from './realtime/PresenceClient';
+import { MessageStore } from './messages/MessageStore';
+import { ComposeOverlay } from './ui/ComposeOverlay';
 import { IntroOverlay as IntroOverlayImpl } from './ui/IntroOverlay';
 import { UIController as UIControllerImpl } from './ui/UIController';
 import type {
@@ -20,6 +22,8 @@ export interface AppDependencies {
   schedule: HanabiScheduleContract;
   intro: IntroOverlay;
   ui: UIController;
+  compose: ComposeOverlay;
+  messages: MessageStore;
 }
 
 export function createDependencies(): AppDependencies {
@@ -29,6 +33,8 @@ export function createDependencies(): AppDependencies {
     presence: new PresenceClient(),
     schedule: new HanabiSchedule(),
     intro: new IntroOverlayImpl(),
-    ui: new UIControllerImpl()
+    ui: new UIControllerImpl(),
+    compose: new ComposeOverlay(),
+    messages: new MessageStore()
   };
 }

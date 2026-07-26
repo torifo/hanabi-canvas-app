@@ -1,6 +1,7 @@
 import { registerSW } from 'virtual:pwa-register';
 import { createDependencies, type AppDependencies } from './composition';
 import { resolveMuted, resolvePresenceUrl, shouldDisposeOnPageHide } from './lifecycle';
+import { guardMessage } from './messages/messageGuard';
 import { MOOD_PROFILES } from './moods';
 import type { MoodId } from './types';
 import './style.css';
@@ -16,6 +17,7 @@ class AppCore {
   private presenceEnabled = true;
   private userMuted = false;
   private countdownTimer = 0;
+  private noonTimer = 0;
   private disposed = false;
 
   constructor(dependencies: AppDependencies) {
@@ -26,7 +28,7 @@ class AppCore {
   }
 
   async init(): Promise<void> {
-    const { graphics, intro, presence, schedule, ui } = this.dependencies;
+    const { compose, graphics, intro, messages, presence, schedule, ui } = this.dependencies;
 
     ui.init(this.uiRoot);
     intro.onEnter(() => {
@@ -44,6 +46,25 @@ class AppCore {
       presence.setEnabled(enabled && !document.hidden);
     });
     presence.onRemoteSpark((x, y) => graphics.emitRemoteSpark(x, y));
+
+    // --- メッセージ花火 ---
+    compose.mount(this.uiRoot);
+    compose.onLaunch((text) => {
+      const record = messages.add(text, true);
+      graphics.bloomMessage(record, true);
+      presence.sendBloom(text);
+    });
+    presence.onRemoteBloom((raw) => {
+      // サーバーは型と文字数しか見ない。細工されたクライアントに備え、
+      // 受信側でも送信時と同じ検証を通してから空へ迎える
+      const checked = guardMessage(raw);
+      if (!checked.ok) return;
+      // 受信側が自分の空の空き場所へ咲かせる（座標は通信しない）
+      const record = messages.add(checked.text, false);
+      graphics.bloomMessage(record, false);
+    });
+    graphics.setMessages(messages.list());
+    this.scheduleNoonSweep();
 
     const presenceUrl = getPresenceUrl();
     if (presenceUrl) presence.connect(presenceUrl);
@@ -89,6 +110,24 @@ class AppCore {
   private onPointerDown = (event: PointerEvent): void => {
     if (this.activePointerId !== null || event.button !== 0) return;
     event.preventDefault();
+
+    const scene = this.dependencies.graphics.toSceneCoords(event.clientX, event.clientY);
+    // 打ち上げ前の玉に触れたら、火花ではなく入力欄を開く
+    if (this.dependencies.graphics.isShellAt(scene.x, scene.y)) {
+      void this.ensureSound();
+      this.dependencies.compose.open();
+      return;
+    }
+    // 文面の「消す」に触れたら、その花火だけを自分の空から黙らせる
+    const dismissId = this.dependencies.graphics.dismissAt(scene.x, scene.y);
+    if (dismissId) {
+      this.dependencies.messages.dismiss(dismissId);
+      this.dependencies.graphics.removeMessage(dismissId);
+      return;
+    }
+    // メッセージ花火に触れたら、火花は出さず読むだけにする
+    if (this.dependencies.graphics.messageAt(scene.x, scene.y)) return;
+
     void this.ensureSound();
     this.activePointerId = event.pointerId;
     // 素早いタップ等でポインタが既に解放されていると NotFoundError になるため防御
@@ -164,6 +203,18 @@ class AppCore {
     if (event.persisted) this.onVisibilityChange();
   };
 
+  /** ローカル時刻の正午をまたいだら、貯まった花火を捨てて空を掃く */
+  private scheduleNoonSweep(): void {
+    const { graphics, messages } = this.dependencies;
+    window.clearTimeout(this.noonTimer);
+    const delay = Math.max(1000, Math.min(messages.msUntilNextNoon() + 1000, 2 ** 31 - 1));
+    this.noonTimer = window.setTimeout(() => {
+      messages.sweep();
+      graphics.setMessages(messages.list());
+      this.scheduleNoonSweep();
+    }, delay);
+  }
+
   private updateCountdown(): void {
     const now = new Date();
     this.dependencies.ui.updateCountdown(
@@ -176,6 +227,7 @@ class AppCore {
     if (this.disposed) return;
     this.disposed = true;
     window.clearInterval(this.countdownTimer);
+    window.clearTimeout(this.noonTimer);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
     this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
@@ -186,6 +238,7 @@ class AppCore {
     window.removeEventListener('pagehide', this.onPageHide);
     window.removeEventListener('pageshow', this.onPageShow);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    this.dependencies.compose.dispose();
     this.dependencies.graphics.dispose();
     this.dependencies.sound.dispose();
     this.dependencies.presence.dispose();
