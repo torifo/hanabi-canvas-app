@@ -1,4 +1,11 @@
-import { MOOD_TRANSITION_MS, type GraphicsEngine as GraphicsEngineContract, type MoodProfile } from '../types';
+import { messagePalette, type MessagePalette } from '../messages/messageColor';
+import { findPlacement, type Circle, type Rect } from '../messages/placement';
+import {
+  MOOD_TRANSITION_MS,
+  type GraphicsEngine as GraphicsEngineContract,
+  type MessageRecord,
+  type MoodProfile
+} from '../types';
 
 /**
  * Canvas2D 実装 — 「花火と橋 デザイン案」Turn 2 (2a) 常駐シーンの移植。
@@ -16,6 +23,39 @@ const W = 1440;
 const H = 810;
 const HORIZON = Math.round(H * 0.52);
 const DECK_Y = 560;
+
+// --- メッセージ花火 ---
+// 空として使える帯。水平線(421)より上、上端のUIを避けた範囲
+const SKY_TOP = 70;
+const SKY_BOTTOM = 380;
+const MESSAGE_RADIUS = 64;
+// 気持ちよく重ならずに置ける数（空きは約24万px²、1発あたり約1.8万px²）
+const NEAR_LIMIT_LANDSCAPE = 12;
+const NEAR_LIMIT_PORTRAIT = 6;
+// 縦画面の cover クロップで見えるシーン x 帯
+const PORTRAIT_VISIBLE_X = { min: 533, max: 907 };
+const RISE_DURATION_MS = 1150;
+// 遠景に残す上限。これを超えた古いものは消す（描画コストの上限にもなる）
+const FAR_LIMIT = 24;
+
+// 橋のたもとに置かれた打ち上げ前の玉
+const SHELL = { x: 214, y: DECK_Y - 34, r: 15 };
+const SHELL_PORTRAIT = { x: 596, y: DECK_Y - 34, r: 15 };
+
+interface MessageBloom {
+  record: MessageRecord;
+  x: number;
+  y: number;
+  palette: MessagePalette;
+  /** 手前層=1 → 遠景へ退くと 0 へ向かう */
+  near: number;
+  nearTarget: number;
+  /** 玉から昇っている最中の進捗 (0-1)。1で開花済み */
+  rise: number;
+  bornAt: number;
+  hoverA: number;
+  parts: Array<{ dx: number; dy: number; r: number; size: number; tw: number; phase: number }>;
+}
 
 interface ScenePalette {
   sky: Array<[number, string]>;
@@ -119,6 +159,11 @@ export class GraphicsEngine implements GraphicsEngineContract {
   private displayH = 1;
   private portrait = false;
   private hover: { x: number; y: number; dragging: boolean } | null = null;
+  private messages: MessageBloom[] = [];
+  private shellHoverA = 0;
+  // タップ端末では pointermove が来ないため、触れた花火のラベルを一定時間出す
+  private pinned: { id: string; until: number } | null = null;
+  private dismissHit: { x: number; y: number; w: number; h: number; id: string } | null = null;
   private rafId = 0;
   private last = 0;
 
@@ -253,7 +298,173 @@ export class GraphicsEngine implements GraphicsEngineContract {
       if (this.clouds.length) {
         this.clouds = (portrait ? CLOUD_CONFIGS_PORTRAIT : CLOUD_CONFIGS).map((cfg) => this.buildCloud(cfg));
       }
+      // 可視帯と手前層の上限が変わるため、メッセージ花火を置き直す
+      if (this.messages.length) {
+        this.setMessages(this.messages.map((bloom) => bloom.record));
+      }
     }
+  }
+
+  // ---- メッセージ花火 ----
+
+  private get shell(): { x: number; y: number; r: number } {
+    return this.portrait ? SHELL_PORTRAIT : SHELL;
+  }
+
+  isShellAt(x: number, y: number): boolean {
+    const shell = this.shell;
+    // 指でも押しやすいよう、見た目より広めに取る
+    return Math.hypot(x * W - shell.x, y * H - shell.y) <= shell.r * 2.6;
+  }
+
+  setMessages(records: readonly MessageRecord[]): void {
+    const limit = this.nearLimit();
+    const capped = records.slice(Math.max(0, records.length - (limit + FAR_LIMIT)));
+    this.messages = [];
+    for (const record of capped) {
+      this.messages.push(this.createBloom(record, false));
+    }
+    // 新しいものから順に手前へ。あふれた分は遠景へ
+    this.messages.forEach((bloom, index) => {
+      const fromNewest = this.messages.length - 1 - index;
+      const near = fromNewest < limit ? 1 : 0;
+      bloom.near = near;
+      bloom.nearTarget = near;
+    });
+  }
+
+  bloomMessage(record: MessageRecord, launched: boolean): void {
+    const bloom = this.createBloom(record, launched);
+    this.messages.push(bloom);
+    this.trimMessages();
+    this.reflowMessages();
+  }
+
+  /** 手前層＋遠景層の合計に上限を設け、描画コストを頭打ちにする */
+  private trimMessages(): void {
+    const limit = this.nearLimit() + FAR_LIMIT;
+    if (this.messages.length > limit) {
+      this.messages.splice(0, this.messages.length - limit);
+    }
+  }
+
+  messageAt(x: number, y: number): MessageRecord | null {
+    const sx = x * W;
+    const sy = y * H;
+    // 手前層だけが読める。遠景の光には触れられない
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+      const bloom = this.messages[i]!;
+      if (bloom.near < 0.6 || bloom.rise < 1) continue;
+      const r = MESSAGE_RADIUS * bloom.near;
+      if (Math.hypot(sx - bloom.x, (sy - bloom.y) / 0.94) <= r) {
+        // タップでも読めるよう、しばらくラベルを出したままにする
+        this.pinned = { id: bloom.record.id, until: performance.now() + 4200 };
+        return bloom.record;
+      }
+    }
+    return null;
+  }
+
+  /** ラベル内の「消す」に触れたか。触れていればその花火のIDを返す */
+  dismissAt(x: number, y: number): string | null {
+    const hit = this.dismissHit;
+    if (!hit) return null;
+    const sx = x * W;
+    const sy = y * H;
+    if (sx < hit.x || sx > hit.x + hit.w || sy < hit.y || sy > hit.y + hit.h) return null;
+    this.pinned = null;
+    this.dismissHit = null;
+    return hit.id;
+  }
+
+  /** 黙らせた花火を空から外す */
+  removeMessage(id: string): void {
+    this.messages = this.messages.filter((bloom) => bloom.record.id !== id);
+    this.reflowMessages();
+  }
+
+  /** 手前層の上限。あふれた古いものは遠景へ退く */
+  private nearLimit(): number {
+    return this.portrait ? NEAR_LIMIT_PORTRAIT : NEAR_LIMIT_LANDSCAPE;
+  }
+
+  private reflowMessages(): void {
+    const limit = this.nearLimit();
+    this.messages.forEach((bloom, index) => {
+      const fromNewest = this.messages.length - 1 - index;
+      bloom.nearTarget = fromNewest < limit ? 1 : 0;
+    });
+  }
+
+  /** 空いている場所を選んで1発ぶんの状態を作る */
+  private createBloom(record: MessageRecord, launched: boolean): MessageBloom {
+    const area = this.portrait
+      ? { minX: PORTRAIT_VISIBLE_X.min, maxX: PORTRAIT_VISIBLE_X.max, minY: SKY_TOP, maxY: SKY_BOTTOM }
+      : { minX: 40, maxX: W - 40, minY: SKY_TOP, maxY: SKY_BOTTOM };
+
+    const occupied: Circle[] = [
+      ...this.clouds.map((c) => ({ x: c.cx, y: c.cy, r: c.R })),
+      ...this.messages.filter((m) => m.near > 0.5).map((m) => ({ x: m.x, y: m.y, r: MESSAGE_RADIUS }))
+    ];
+    const spot = findPlacement({
+      area,
+      radius: MESSAGE_RADIUS,
+      occupied,
+      avoidRects: this.uiAvoidRects()
+    });
+
+    const palette = messagePalette(record.text);
+    const parts: MessageBloom['parts'] = [];
+    for (let i = 0; i < 190; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const rr = Math.pow(Math.random(), 0.45);
+      parts.push({
+        dx: Math.cos(ang),
+        dy: Math.sin(ang) * 0.94,
+        r: rr,
+        size: Math.random() < 0.16 ? 3.4 + Math.random() * 2.6 : 1.2 + Math.random() * 2.2,
+        tw: 0.5 + Math.random() * 1.5,
+        phase: Math.random() * 9
+      });
+    }
+    return {
+      record,
+      x: spot.x,
+      y: spot.y,
+      palette,
+      near: 1,
+      nearTarget: 1,
+      rise: launched ? 0 : 1,
+      bornAt: performance.now(),
+      hoverA: 0,
+      parts
+    };
+  }
+
+  /**
+   * UIの占有域をシーン座標へ投影する。
+   * UI要素はビューポート基準で配置されるため、シーン空間での位置は画面比率で
+   * 変わる。固定値では持てないので、配置のたびに実際の矩形から求める。
+   */
+  private uiAvoidRects(): Rect[] {
+    const canvas = this.canvas;
+    if (!canvas || typeof document === 'undefined') return [];
+    const rects: Rect[] = [];
+    for (const selector of ['.brand', '.controls', '.countdown']) {
+      const element = document.querySelector(selector);
+      if (!element) continue;
+      const box = element.getBoundingClientRect();
+      if (box.width < 1 || box.height < 1) continue;
+      const topLeft = this.toSceneCoords(box.left, box.top);
+      const bottomRight = this.toSceneCoords(box.right, box.bottom);
+      rects.push({
+        x: topLeft.x * W,
+        y: topLeft.y * H,
+        w: Math.max((bottomRight.x - topLeft.x) * W, 1),
+        h: Math.max((bottomRight.y - topLeft.y) * H, 1)
+      });
+    }
+    return rects;
   }
 
   /** 常駐輪との当たり判定（楕円: dy は 0.94 圧縮）。ヒットした輪を返す */
@@ -273,6 +484,9 @@ export class GraphicsEngine implements GraphicsEngineContract {
     this.stars = [];
     this.flashes = [];
     this.clouds = [];
+    this.messages = [];
+    this.hover = null;
+    this.charge = null;
     this.sprites.clear();
     this.canvas = null;
     this.display = null;
@@ -604,6 +818,9 @@ export class GraphicsEngine implements GraphicsEngineContract {
       c.pe = pe;
     }
 
+    // メッセージ花火（加算合成の層に描く）
+    this.drawMessages(ctx, now, dtf, speedProp);
+
     // タップ火花（物理パーティクル）
     const keptStars: Star[] = [];
     for (const p of this.stars) {
@@ -739,8 +956,13 @@ export class GraphicsEngine implements GraphicsEngineContract {
       mctx.arc(c.fx, c.fy, 38 + 30 * c.pe, 0, Math.PI * 2);
       mctx.fill();
     }
+    // 打ち上げ前の玉（橋のたもと・控えめ）
+    this.drawShell(mctx, now, dtf);
     mctx.globalAlpha = 1;
     mctx.globalCompositeOperation = 'source-over';
+
+    // ホバー中のメッセージ花火の文面
+    this.drawMessageLabel(mctx);
 
     // ---- 表示キャンバスへ cover ブリット ----
     const disp = this.display;
@@ -753,6 +975,184 @@ export class GraphicsEngine implements GraphicsEngineContract {
     disp.fillStyle = '#04060F';
     disp.fillRect(0, 0, dw, dh);
     disp.drawImage(this.frame, offX * dpr, offY * dpr, W * scale * dpr, H * scale * dpr);
+  }
+
+  /** メッセージ花火。手前層は読めるように、古いものは遠景の小さな光へ退く */
+  private drawMessages(ctx: CanvasRenderingContext2D, now: number, dtf: number, speedProp: number): void {
+    const hover = this.hover;
+    for (const bloom of this.messages) {
+      // 玉から昇っている最中
+      if (bloom.rise < 1) {
+        bloom.rise = Math.min(1, bloom.rise + (dtf * 16.7) / RISE_DURATION_MS);
+        // 昇りきった瞬間を開花の起点にする（そうしないと自分の1発だけ開花が省かれる）
+        if (bloom.rise >= 1) bloom.bornAt = now;
+        const shell = this.shell;
+        const e = 1 - Math.pow(1 - bloom.rise, 3);
+        const rx = shell.x + (bloom.x - shell.x) * e;
+        const ry = shell.y + (bloom.y - shell.y) * e;
+        const spr = this.sprite(bloom.palette.glitter);
+        ctx.globalAlpha = 0.85;
+        ctx.drawImage(spr, rx - 5, ry - 5, 10, 10);
+        if (Math.random() < 0.7) {
+          ctx.globalAlpha = 0.4;
+          ctx.drawImage(spr, rx - 2 + (Math.random() - 0.5) * 6, ry + 4 + Math.random() * 9, 4, 4);
+        }
+        ctx.globalAlpha = 1;
+        continue;
+      }
+
+      // 手前 ↔ 遠景の遷移
+      bloom.near += (bloom.nearTarget - bloom.near) * Math.min(1, dtf * 0.02);
+
+      const pointerOver = hover
+        ? Math.hypot(hover.x - bloom.x, (hover.y - bloom.y) / 0.94) <= MESSAGE_RADIUS * bloom.near
+        : false;
+      const isPinned = this.pinned !== null && this.pinned.id === bloom.record.id && now < this.pinned.until;
+      const revealing = (pointerOver || isPinned) && bloom.near > 0.6;
+      bloom.hoverA += ((revealing ? 1 : 0) - bloom.hoverA) * Math.min(1, dtf * 0.09);
+
+      const age = (now - bloom.bornAt) / 1000;
+      // 開花直後の閃きが落ち着き、以降は静かに瞬き続ける
+      const settle = Math.min(1, age / 1.2);
+      const scale = (0.28 + 0.72 * bloom.near) * (0.6 + 0.4 * settle);
+      const radius = MESSAGE_RADIUS * scale;
+      const brightness = (0.5 + 0.5 * bloom.near) * (1 + 0.8 * bloom.hoverA);
+
+      // ハロー
+      const haloR = radius * 1.8;
+      const halo = ctx.createRadialGradient(bloom.x, bloom.y, 0, bloom.x, bloom.y, haloR);
+      halo.addColorStop(0, rgba(bloom.palette.mid, 0.1 * brightness));
+      halo.addColorStop(0.5, rgba(bloom.palette.outer, 0.05 * brightness));
+      halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = halo;
+      ctx.fillRect(bloom.x - haloR, bloom.y - haloR, haloR * 2, haloR * 2);
+
+      // コア
+      const coreR = radius * 0.3;
+      const core = ctx.createRadialGradient(bloom.x, bloom.y, 0, bloom.x, bloom.y, coreR);
+      core.addColorStop(0, rgba(bloom.palette.core, 0.24 * brightness));
+      core.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(bloom.x, bloom.y, coreR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 粒
+      for (const p of bloom.parts) {
+        const tw = Math.sin(now * 0.0018 * p.tw * speedProp + p.phase);
+        const a = (0.3 + 0.7 * tw * tw) * brightness * 0.75;
+        const px = bloom.x + p.dx * p.r * radius;
+        const py = bloom.y + p.dy * p.r * radius;
+        const color = p.r > 0.72 ? bloom.palette.outer : p.r > 0.34 ? bloom.palette.mid : bloom.palette.core;
+        const size = p.size * scale;
+        ctx.globalAlpha = Math.min(a, 1);
+        ctx.drawImage(this.sprite(color), px - size, py - size, size * 2, size * 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /** 橋のたもとの打ち上げ前の玉。ホバーでわずかに浮いて応える */
+  private drawShell(ctx: CanvasRenderingContext2D, now: number, dtf: number): void {
+    const shell = this.shell;
+    const hover = this.hover;
+    const over = hover ? Math.hypot(hover.x - shell.x, hover.y - shell.y) <= shell.r * 2.6 : false;
+    this.shellHoverA += ((over ? 1 : 0) - this.shellHoverA) * Math.min(1, dtf * 0.1);
+
+    const lift = this.shellHoverA * 7;
+    const y = shell.y - lift;
+    const breathe = 0.55 + 0.45 * Math.sin(now * 0.0015);
+    const glow = 0.18 + 0.22 * breathe + 0.5 * this.shellHoverA;
+    const tint = this.moodMix > 0.5 ? '#8DE3E2' : '#FFC77D';
+
+    ctx.globalCompositeOperation = 'lighter';
+    const haloR = shell.r * (3.4 + this.shellHoverA * 1.6);
+    const halo = ctx.createRadialGradient(shell.x, y, 0, shell.x, y, haloR);
+    halo.addColorStop(0, rgba(tint, 0.22 * glow));
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(shell.x - haloR, y - haloR, haloR * 2, haloR * 2);
+
+    ctx.globalCompositeOperation = 'source-over';
+    // 玉そのもの（暗い球に細い縁）
+    ctx.fillStyle = '#0A0F1C';
+    ctx.beginPath();
+    ctx.arc(shell.x, y, shell.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = rgba(tint, 0.4 + 0.4 * this.shellHoverA);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    // 導火線の先の小さな灯
+    ctx.globalCompositeOperation = 'lighter';
+    const fuse = this.sprite(tint);
+    const fs = 3 + this.shellHoverA * 2.5;
+    ctx.globalAlpha = 0.5 + 0.5 * breathe;
+    ctx.drawImage(fuse, shell.x + shell.r * 0.5 - fs, y - shell.r - fs, fs * 2, fs * 2);
+    ctx.globalAlpha = 1;
+  }
+
+  /** ホバー中のメッセージ花火の文面を、その傍らに静かに置く */
+  private drawMessageLabel(ctx: CanvasRenderingContext2D): void {
+    // messageAt と同じ「最新優先」で選ぶ（重なったときにずれないため）
+    let target: MessageBloom | null = null;
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+      const bloom = this.messages[i]!;
+      if (bloom.hoverA > 0.15 && bloom.near > 0.6) { target = bloom; break; }
+    }
+    if (!target) { this.dismissHit = null; return; }
+
+    // 縦画面では可視帯にしか置けないので、その幅に収まるまで文字を小さくする
+    const band = this.portrait
+      ? { min: PORTRAIT_VISIBLE_X.min, max: PORTRAIT_VISIBLE_X.max }
+      : { min: 0, max: W };
+    const bandW = band.max - band.min;
+    const padX = 18;
+    const padY = 12;
+    const dismissW = 58;
+
+    let fontSize = 26;
+    let width = 0;
+    for (;;) {
+      ctx.font = `${fontSize}px "Yu Mincho", "Hiragino Mincho ProN", serif`;
+      width = ctx.measureText(target.record.text).width;
+      if (width + padX * 2 + dismissW <= bandW - 32 || fontSize <= 13) break;
+      fontSize -= 1;
+    }
+
+    const alpha = Math.min(1, target.hoverA * 1.4);
+    const boxW = Math.min(width + padX * 2 + dismissW, bandW - 24);
+    const boxH = fontSize + padY * 2;
+    let bx = target.x - boxW / 2;
+    let by = target.y + MESSAGE_RADIUS * target.near + 18;
+    bx = Math.min(Math.max(bx, band.min + 12), band.max - boxW - 12);
+    by = Math.min(by, H - boxH - 16);
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = alpha * 0.72;
+    ctx.fillStyle = 'rgba(7,17,31,0.62)';
+    roundRect(ctx, bx, by, boxW, boxH, 4);
+    ctx.fill();
+    ctx.globalAlpha = alpha * 0.5;
+    ctx.strokeStyle = rgba(target.palette.mid, 0.5);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(255,248,226,0.92)';
+    ctx.fillText(target.record.text, bx + padX, by + boxH / 2);
+
+    // 受け取った側がその花火だけを黙らせるための控えめな出口
+    const dx = bx + boxW - dismissW;
+    ctx.globalAlpha = alpha * 0.62;
+    ctx.font = '13px "Hiragino Kaku Gothic ProN", sans-serif';
+    ctx.fillStyle = 'rgba(229,235,232,0.72)';
+    ctx.fillText('消す', dx + 14, by + boxH / 2);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    this.dismissHit = { x: dx, y: by, w: dismissW, h: boxH, id: target.record.id };
   }
 
   private paintBackground(ctx: CanvasRenderingContext2D, pal: ScenePalette, seed: number): void {
@@ -923,6 +1323,16 @@ export class GraphicsEngine implements GraphicsEngineContract {
       g.stroke();
     }
   }
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 function createLayer(): HTMLCanvasElement {
