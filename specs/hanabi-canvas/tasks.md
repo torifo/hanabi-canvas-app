@@ -123,6 +123,25 @@
   - Done when: 実機でイントロタップ→環境音再生、バックグラウンド往復後も音が復帰する
   - Depends on: Task 3.1
 
+
+### Wave 7（メッセージ花火 — 設計: [message-fireworks-design.md](message-fireworks-design.md)）
+
+- [x] **Task 7.1** [F]: 純ロジック — 検証・色の導出・空き場所の探索・保存
+  - Files: `src/messages/{messageGuard,messageColor,placement,MessageStore}.ts`, `tests/messages.test.ts`
+  - Done when: node環境のテストが通る（16件 通過済み）
+- [x] **Task 7.2** [Terra]: `bloom` 種別の中継
+  - Files: `server/server.js`, `src/realtime/PresenceClient.ts`, `src/types.ts`
+  - Done when: 送受信・連投・文字数超過の破棄が実サーバーで確認できる（確認済み）
+- [x] **Task 7.3** [F]: 打ち上げ玉・メッセージ花火の描画・文面表示
+  - Files: `src/graphics/GraphicsEngine.ts`
+  - Done when: 玉のホバー/クリック、開花、ホバーでの文面表示が動く
+- [x] **Task 7.4** [F/Sol]: 入力欄と配線
+  - Files: `src/ui/ComposeOverlay.ts`, `src/style.css`, `src/main.ts`, `src/composition.ts`
+  - Done when: 玉→入力→打ち上げ→保存→他端末へ到達が通しで動く
+- [ ] **Task 7.5** [F]: 使用感の調整（設計の「後で調整する」項目）
+  - What: 古い花火の退き方（速度・最終的な大きさ・遠景の上限）、手前層の上限（横12・縦6）、単語群と色の対応表
+  - Done when: 実際に触って違和感がなくなる
+
 ### Wave 5（Wave 3 後 — Wave 4 と並列着手可: Phase 3 Desktop & Steam MVP）
 ※ 検証の**完了宣言**は本書のロードマップ通り Phase 2 → Phase 3 の順で行うが、実装着手は Task 3.1 完了後から可能
 
@@ -146,4 +165,4 @@
   - Depends on: Wave 5 完了
 
 ## Progress
-- Total: 20 tasks | Completed: 12 (2.6 イントロ遷移が統合で完了) | In Progress: 3 (4.1 資材のみ / 5.1, 5.2 ビルド済み・検証待ち) | Phase 2 計画済み: 4.2–4.5 | 未着手: 6.1
+- Total: 25 tasks | Completed: 16 (2.6 イントロ遷移、7.1–7.4 メッセージ花火) | In Progress: 3 (4.1 資材のみ / 5.1, 5.2 ビルド済み・検証待ち) | Phase 2 計画済み: 4.2–4.5 | 未着手: 6.1, 7.5
