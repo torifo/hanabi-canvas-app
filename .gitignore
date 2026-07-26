@@ -7,3 +7,5 @@ release/
 *.tsbuildinfo
 .DS_Store
 dev-dist/
+.env.local
+.env.*.local
