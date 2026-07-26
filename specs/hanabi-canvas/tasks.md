@@ -124,7 +124,7 @@
   - Depends on: Task 3.1
 
 ### Wave 5（Wave 3 後 — Wave 4 と並列着手可: Phase 3 Desktop & Steam MVP）
-※ 検証の**完了宣言**は SPEC のロードマップ通り Phase 2 → Phase 3 の順で行うが、実装着手は Task 3.1 完了後から可能
+※ 検証の**完了宣言**は本書のロードマップ通り Phase 2 → Phase 3 の順で行うが、実装着手は Task 3.1 完了後から可能
 
 - [ ] **Task 5.1** [Luna]: Electron アプリ
   - What: frame: false / transparent: true、トレイ常駐、マルチディスプレイ追従、.exe/.dmg ビルド（electron-builder）

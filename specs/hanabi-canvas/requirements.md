@@ -4,7 +4,7 @@
 
 1枚の2Dイラストの上に光・シェーダー・音のグラデーションを重ねるアンビエント空間プロダクト。SNSの数字や評価から離れ、自分の「心模様」に没入しつつ、全国の花火の気配や誰かが灯した光を静かに感じられる体験を提供する。動作環境はモバイルPWA / Web / Electron / Wallpaper Engine、インフラは自前VPS（Nginx + Node.js ws + HTTPS）。
 
-原本仕様: [SPEC.md](../../SPEC.md)
+仕様の正本は、本書と [design.md](design.md)・[tasks.md](tasks.md) に集約する。
 検証は3段階（Phase 1: Web Core → Phase 2: Mobile & Realtime → Phase 3: Desktop & Steam）で行う。段階詳細は [tasks.md](tasks.md) の Wave 構成を参照。
 
 ## User Stories

@@ -22,7 +22,7 @@ GPT-5.6（Sol / Terra / Luna）の成果物を受け入れて Phase 1 結合（T
 - [ ] `npm run dev` / `npm run build` が通る
 - [ ] `vite.config.ts` が `base: './'`（Wallpaper Engine 互換の相対パス）
 - [ ] `src/types.ts` が design.md の Interface Contracts と一致（D2/D4 含む）
-- [ ] ディレクトリ構造が SPEC.md 2. と一致（src/graphics, ui, audio, realtime, desktop / server / public）
+- [ ] ディレクトリ構造が [design.md](design.md) のArchitectureと一致（src/graphics, ui, audio, realtime / electron / server / public）
 - [ ] スタブが `src/stubs/` に分離されており、Fable 実装（graphics/ui）で差し替え可能な構造
 
 ### Terra（server / realtime）
