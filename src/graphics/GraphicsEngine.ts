@@ -38,9 +38,11 @@ const RISE_DURATION_MS = 1150;
 // 遠景に残す上限。これを超えた古いものは消す（描画コストの上限にもなる）
 const FAR_LIMIT = 24;
 
-// 橋のたもとに置かれた打ち上げ前の玉
-const SHELL = { x: 214, y: DECK_Y - 34, r: 15 };
-const SHELL_PORTRAIT = { x: 596, y: DECK_Y - 34, r: 15 };
+// 橋のたもとに置かれた打ち上げ前の玉。x は可視範囲から毎回求める
+// （固定座標だと画面比率によっては cover クロップで画面外へ出てしまう）
+const SHELL_R = 18;
+const SHELL_Y = DECK_Y - 34;
+const SHELL_X_RATIO = 0.2;
 
 interface MessageBloom {
   record: MessageRecord;
@@ -89,8 +91,8 @@ interface CloudConfig {
 }
 
 const CLOUD_CONFIGS: CloudConfig[] = [
-  { cx: 372, cy: 216, R: 178, int: 1.0, colors: ['#F4FBFF', '#BFE4FA', '#7FC8FF', '#4A9BE8'], glit: '#F4DCB0', flare: '#9FC4FF', fx: 372 },
-  { cx: 1068, cy: 216, R: 178, int: 1.0, colors: ['#FFF4E8', '#FFCDB8', '#FF8A80', '#E0485A'], glit: '#FFD9A0', flare: '#FFAA88', fx: 1068 },
+  { cx: 372, cy: 216, R: 178, int: 1.0, colors: ['#F4FBFF', '#BFE4FA', '#7FC8FF', '#4A9BE8'], glit: '#F4DCB0', flare: '#5AA8FF', fx: 372 },
+  { cx: 1068, cy: 216, R: 178, int: 1.0, colors: ['#FFF4E8', '#FFCDB8', '#FF8A80', '#E0485A'], glit: '#FFD9A0', flare: '#FF6E6E', fx: 1068 },
   { cx: 720, cy: 126, R: 86, int: 0.7, colors: ['#FFFFFF', '#FFF6E6', '#EDEFF4', '#C9D2E0'], glit: '#FFF2D8', flare: '#FFE9C0', fx: 720, trail: true }
 ];
 
@@ -99,8 +101,8 @@ const CLOUD_CONFIGS: CloudConfig[] = [
 // UIとの取り合い: タイトル (x<620, y<115)・ムードピル/気配 (x>730, y<115) を避け、
 // 赤玉はアーチ越し (1c 大橋ごし) の構図としてデッキ (y560) より上に収める
 const CLOUD_CONFIGS_PORTRAIT: CloudConfig[] = [
-  { cx: 742, cy: 226, R: 112, int: 1.0, colors: ['#F4FBFF', '#BFE4FA', '#7FC8FF', '#4A9BE8'], glit: '#F4DCB0', flare: '#9FC4FF', fx: 742 },
-  { cx: 800, cy: 420, R: 100, int: 1.0, colors: ['#FFF4E8', '#FFCDB8', '#FF8A80', '#E0485A'], glit: '#FFD9A0', flare: '#FFAA88', fx: 800 },
+  { cx: 742, cy: 226, R: 112, int: 1.0, colors: ['#F4FBFF', '#BFE4FA', '#7FC8FF', '#4A9BE8'], glit: '#F4DCB0', flare: '#5AA8FF', fx: 742 },
+  { cx: 800, cy: 420, R: 100, int: 1.0, colors: ['#FFF4E8', '#FFCDB8', '#FF8A80', '#E0485A'], glit: '#FFD9A0', flare: '#FF6E6E', fx: 800 },
   { cx: 686, cy: 122, R: 52, int: 0.7, colors: ['#FFFFFF', '#FFF6E6', '#EDEFF4', '#C9D2E0'], glit: '#FFF2D8', flare: '#FFE9C0', fx: 686, trail: true }
 ];
 
@@ -308,7 +310,25 @@ export class GraphicsEngine implements GraphicsEngineContract {
   // ---- メッセージ花火 ----
 
   private get shell(): { x: number; y: number; r: number } {
-    return this.portrait ? SHELL_PORTRAIT : SHELL;
+    const view = this.visibleScene();
+    const margin = SHELL_R * 2.4;
+    const x = view.minX + (view.maxX - view.minX) * SHELL_X_RATIO;
+    return {
+      x: Math.min(Math.max(x, view.minX + margin), view.maxX - margin),
+      y: Math.min(Math.max(SHELL_Y, view.minY + margin), view.maxY - margin),
+      r: SHELL_R
+    };
+  }
+
+  /** cover クロップで実際に見えているシーン座標の範囲 */
+  private visibleScene(): { minX: number; maxX: number; minY: number; maxY: number } {
+    const { scale, offX, offY } = this.coverMapping(this.displayW, this.displayH);
+    return {
+      minX: Math.max(0, -offX / scale),
+      maxX: Math.min(W, (this.displayW - offX) / scale),
+      minY: Math.max(0, -offY / scale),
+      maxY: Math.min(H, (this.displayH - offY) / scale)
+    };
   }
 
   isShellAt(x: number, y: number): boolean {
@@ -900,7 +920,8 @@ export class GraphicsEngine implements GraphicsEngineContract {
     mctx.globalCompositeOperation = 'lighter';
     const breatheEdge = 0.85 + 0.15 * Math.sin(now * 0.001 * speedProp);
     for (const [lw, la] of [[2, 0.75], [9, 0.14], [22, 0.05]] as const) {
-      mctx.strokeStyle = rgba('#FFC98A', la * breatheEdge);
+      // 赤い大輪と同系のあたたかい色に揃える
+      mctx.strokeStyle = rgba('#FFA487', la * breatheEdge);
       mctx.lineWidth = lw;
       mctx.beginPath();
       mctx.moveTo(0, DECK_Y);
@@ -923,14 +944,16 @@ export class GraphicsEngine implements GraphicsEngineContract {
     for (const c of this.clouds) {
       const flick = 0.5 + 0.5 * Math.abs(Math.sin(now * 0.021 + c.fx) * Math.sin(now * 0.0073 + c.cy));
       const fa = c.int * (0.35 + 0.65 * flick) * (0.55 + 1.15 * c.pe) * (c.trail ? 0.45 + 0.85 * c.trailA : 1);
-      const core = this.sprite(c.glit);
-      mctx.globalAlpha = Math.min(fa, 1);
-      const cs = 10 + 8 * c.pe;
+      // 芯は各大輪の色で描く。金色＋大きすぎる芯は白飛びして、
+      // どの花火の明かりなのか見分けがつかなくなる
+      const core = this.sprite(c.flare);
+      mctx.globalAlpha = Math.min(fa * 0.8, 1);
+      const cs = 6 + 4 * c.pe;
       mctx.drawImage(core, c.fx - cs, c.fy - cs, cs * 2, cs * 2);
       const hw = (76 + 96 * c.pe) * c.int;
       const hg = mctx.createLinearGradient(c.fx - hw, c.fy, c.fx + hw, c.fy);
       hg.addColorStop(0, 'rgba(0,0,0,0)');
-      hg.addColorStop(0.5, rgba(c.flare, 0.55 * fa));
+      hg.addColorStop(0.5, rgba(c.flare, 0.72 * fa));
       hg.addColorStop(1, 'rgba(0,0,0,0)');
       mctx.strokeStyle = hg;
       mctx.lineWidth = 1.8;
@@ -948,12 +971,14 @@ export class GraphicsEngine implements GraphicsEngineContract {
       mctx.moveTo(c.fx, c.fy - vh);
       mctx.lineTo(c.fx, c.fy + 2);
       mctx.stroke();
-      const rg = mctx.createRadialGradient(c.fx, c.fy, 0, c.fx, c.fy, 38 + 30 * c.pe);
-      rg.addColorStop(0, rgba(c.flare, 0.32 * fa));
+      const rgR = 46 + 34 * c.pe;
+      const rg = mctx.createRadialGradient(c.fx, c.fy, 0, c.fx, c.fy, rgR);
+      rg.addColorStop(0, rgba(c.flare, 0.58 * fa));
+      rg.addColorStop(0.45, rgba(c.flare, 0.3 * fa));
       rg.addColorStop(1, 'rgba(0,0,0,0)');
       mctx.fillStyle = rg;
       mctx.beginPath();
-      mctx.arc(c.fx, c.fy, 38 + 30 * c.pe, 0, Math.PI * 2);
+      mctx.arc(c.fx, c.fy, rgR, 0, Math.PI * 2);
       mctx.fill();
     }
     // 打ち上げ前の玉（橋のたもと・控えめ）
@@ -1053,7 +1078,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
     }
   }
 
-  /** 橋のたもとの打ち上げ前の玉。ホバーでわずかに浮いて応える */
+  /** 橋のたもとの打ち上げ前の玉。玉貼りの紙を貼り重ねた球＋提げ紐 */
   private drawShell(ctx: CanvasRenderingContext2D, now: number, dtf: number): void {
     const shell = this.shell;
     const hover = this.hover;
@@ -1062,34 +1087,109 @@ export class GraphicsEngine implements GraphicsEngineContract {
 
     const lift = this.shellHoverA * 7;
     const y = shell.y - lift;
+    const r = shell.r;
     const breathe = 0.55 + 0.45 * Math.sin(now * 0.0015);
-    const glow = 0.18 + 0.22 * breathe + 0.5 * this.shellHoverA;
-    const tint = this.moodMix > 0.5 ? '#8DE3E2' : '#FFC77D';
+    const tint = this.moodMix > 0.5 ? '#8DE3E2' : '#FFA487';
 
+    // 直前の描画が残した合成状態を必ず断ち切る（これを怠ると玉が沈む）
+    ctx.save();
+    ctx.globalAlpha = 1;
+
+    // 接地の影
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(3,6,12,0.55)';
+    ctx.beginPath();
+    ctx.ellipse(shell.x, shell.y + r * 0.9, r * (0.95 - this.shellHoverA * 0.18), r * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 触れられることが分かる程度のごく淡い光
     ctx.globalCompositeOperation = 'lighter';
-    const haloR = shell.r * (3.4 + this.shellHoverA * 1.6);
-    const halo = ctx.createRadialGradient(shell.x, y, 0, shell.x, y, haloR);
-    halo.addColorStop(0, rgba(tint, 0.22 * glow));
+    const haloR = r * (2.9 + this.shellHoverA * 1.5);
+    const halo = ctx.createRadialGradient(shell.x, y, r * 0.7, shell.x, y, haloR);
+    halo.addColorStop(0, rgba(tint, 0.1 + 0.06 * breathe + 0.24 * this.shellHoverA));
     halo.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(shell.x - haloR, y - haloR, haloR * 2, haloR * 2);
 
     ctx.globalCompositeOperation = 'source-over';
-    // 玉そのもの（暗い球に細い縁）
-    ctx.fillStyle = '#0A0F1C';
+
+    // 導火線（右上へ細く伸びる）
+    ctx.strokeStyle = '#6E5B3E';
+    ctx.lineWidth = 1.4;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.arc(shell.x, y, shell.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = rgba(tint, 0.4 + 0.4 * this.shellHoverA);
-    ctx.lineWidth = 1.2;
+    ctx.moveTo(shell.x + r * 0.52, y - r * 0.78);
+    ctx.quadraticCurveTo(shell.x + r * 1.0, y - r * 1.24, shell.x + r * 1.16, y - r * 1.5);
     ctx.stroke();
-    // 導火線の先の小さな灯
+
+    // 提げ紐
+    ctx.strokeStyle = '#C2B08C';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.ellipse(shell.x - r * 0.06, y - r - 4, r * 0.32, r * 0.3, 0, Math.PI * 0.12, Math.PI * 1.88);
+    ctx.stroke();
+
+    // 球本体（左上からの光。マットな紙の陰影）
+    const body = ctx.createRadialGradient(
+      shell.x - r * 0.4, y - r * 0.44, r * 0.08,
+      shell.x, y, r * 1.06
+    );
+    body.addColorStop(0, '#EBD9B6');
+    body.addColorStop(0.3, '#DCC49B');
+    body.addColorStop(0.62, '#C0A175');
+    body.addColorStop(0.86, '#94764C');
+    body.addColorStop(1, '#5F4830');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.arc(shell.x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 貼り重ねた紙の継ぎ目。球面に沿う経線として描く
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(shell.x, y, r - 0.4, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.lineWidth = 0.8;
+    for (const [offset, alpha] of [[-0.62, 0.16], [-0.22, 0.2], [0.2, 0.18], [0.6, 0.13]] as const) {
+      ctx.strokeStyle = `rgba(94,72,46,${alpha})`;
+      ctx.beginPath();
+      ctx.ellipse(shell.x + r * offset * 0.34, y, Math.abs(r * offset), r, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // 赤道まわりの巻き
+    ctx.strokeStyle = 'rgba(238,222,190,0.22)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.ellipse(shell.x, y + r * 0.06, r, r * 0.2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(94,72,46,0.16)';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.ellipse(shell.x, y + r * 0.24, r * 0.98, r * 0.16, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // 縁の締まり（球に見せるための暗い外周）
+    ctx.strokeStyle = 'rgba(58,42,26,0.42)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(shell.x, y, r - 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 紙らしい広く弱いハイライト
     ctx.globalCompositeOperation = 'lighter';
-    const fuse = this.sprite(tint);
-    const fs = 3 + this.shellHoverA * 2.5;
-    ctx.globalAlpha = 0.5 + 0.5 * breathe;
-    ctx.drawImage(fuse, shell.x + shell.r * 0.5 - fs, y - shell.r - fs, fs * 2, fs * 2);
+    ctx.globalAlpha = 0.16 + 0.16 * this.shellHoverA;
+    const gloss = ctx.createRadialGradient(shell.x - r * 0.36, y - r * 0.42, 0, shell.x - r * 0.36, y - r * 0.42, r * 0.82);
+    gloss.addColorStop(0, 'rgba(255,246,224,0.85)');
+    gloss.addColorStop(1, 'rgba(255,246,224,0)');
+    ctx.fillStyle = gloss;
+    ctx.beginPath();
+    ctx.arc(shell.x - r * 0.36, y - r * 0.42, r * 0.82, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   /** ホバー中のメッセージ花火の文面を、その傍らに静かに置く */
