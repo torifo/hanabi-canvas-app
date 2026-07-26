@@ -1,0 +1,9 @@
+node_modules/
+server/node_modules/
+dist/
+build/
+release/
+.vite/
+*.tsbuildinfo
+.DS_Store
+dev-dist/

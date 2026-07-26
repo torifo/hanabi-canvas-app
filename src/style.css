@@ -1,0 +1,358 @@
+:root {
+  color-scheme: dark;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  color: rgba(250, 245, 225, 0.9);
+  background: #07111f;
+  --safe-top: max(1rem, env(safe-area-inset-top));
+  --safe-right: max(1rem, env(safe-area-inset-right));
+  --safe-bottom: max(1rem, env(safe-area-inset-bottom));
+  --safe-left: max(1rem, env(safe-area-inset-left));
+  --paper: rgba(255, 248, 226, 0.88);
+  --muted: rgba(229, 235, 232, 0.58);
+  --line: rgba(255, 244, 217, 0.16);
+  --glow: #ffc77d;
+  --panel: rgba(7, 17, 31, 0.36);
+}
+
+:root[data-mood="quiet"] {
+  --paper: rgba(222, 249, 247, 0.88);
+  --muted: rgba(204, 238, 238, 0.56);
+  --line: rgba(180, 238, 235, 0.16);
+  --glow: #8de3e2;
+  --panel: rgba(4, 24, 35, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  height: 100dvh;
+  isolation: isolate;
+  overflow: clip;
+  background: #07111f;
+}
+
+#hanabi-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  cursor: crosshair;
+  transform: scale(1.035);
+  transition: opacity 500ms ease, transform 2.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#hanabi-canvas[data-paused="true"] {
+  opacity: 0.72;
+}
+
+:root[data-entered="true"] #hanabi-canvas {
+  transform: scale(1);
+}
+
+.app-shell::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.24;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+#ui-root {
+  pointer-events: none;
+}
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: #b7b2a6;
+  background: #f7f5f0;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.intro-overlay.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-overlay__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.34;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='.08'/%3E%3C/svg%3E");
+}
+
+.intro-overlay__title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: clamp(1.4rem, 4.5vmin, 3.6rem);
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-weight: 300;
+  letter-spacing: 0.42em;
+  transform: translate(-50%, -50%);
+}
+
+.intro-overlay__column {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  font-size: clamp(1.7rem, 6.2vmin, 4.8rem);
+  line-height: 1;
+  writing-mode: vertical-rl;
+}
+
+/* 読み出しの「花火と」(右列) を高く、「心模様」(左列) を下げる段違い */
+.intro-overlay__column--two {
+  padding-top: clamp(2.8rem, 11vmin, 8rem);
+}
+
+.intro-overlay__firework {
+  flex: none;
+  margin-block-end: 0.6rem;
+  color: #c9c4b6;
+}
+
+.intro-overlay__rule {
+  width: 1px;
+  margin-block-start: 1rem;
+  background: #d4cfc2;
+}
+
+.intro-overlay__rule--short {
+  height: clamp(4rem, 16vmin, 12rem);
+}
+
+.intro-overlay__rule--long {
+  height: clamp(5rem, 22vmin, 16rem);
+}
+
+/* デザイン案の形式: eyebrow は横組み、タイトルのみ縦書き（ヒント文言なし） */
+.brand {
+  position: absolute;
+  top: var(--safe-top);
+  left: var(--safe-left);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: clamp(0.4rem, 1.2vw, 1rem);
+}
+
+.brand__eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-family: "Avenir Next Condensed", "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+}
+
+.brand h1 {
+  margin: 0;
+  color: var(--paper);
+  font-size: clamp(1.45rem, 2.4vw, 2.125rem);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.45;
+  text-shadow: 0 0 30px rgba(255, 199, 125, 0.16);
+  writing-mode: vertical-rl;
+}
+
+.controls {
+  position: absolute;
+  top: var(--safe-top);
+  right: var(--safe-right);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: end;
+  pointer-events: auto;
+}
+
+.mood-switch {
+  display: flex;
+  gap: 0.18rem;
+  padding: 0.22rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  box-shadow: 0 10px 42px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+
+.mood-switch button {
+  min-width: 4.8rem;
+  min-height: 44px;
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: color 240ms ease, background 240ms ease, box-shadow 240ms ease;
+}
+
+.mood-switch button.is-active {
+  color: #17202d;
+  background: var(--paper);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--glow) 24%, transparent);
+}
+
+.presence-toggle {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.65rem;
+  padding-inline: 0.7rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+.presence-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.presence-toggle__light {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 12px var(--glow);
+  transition: opacity 220ms ease, box-shadow 220ms ease;
+}
+
+.presence-toggle input:not(:checked) + .presence-toggle__light {
+  opacity: 0.28;
+  box-shadow: none;
+}
+
+.countdown {
+  position: absolute;
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+  max-width: min(18rem, calc(100vw - 2rem));
+  padding: 0.85rem 1rem;
+  border-inline-start: 1px solid var(--line);
+  color: var(--paper);
+  text-align: end;
+  pointer-events: none;
+}
+
+.countdown p {
+  margin: 0;
+}
+
+.countdown__label,
+.countdown__event {
+  color: var(--muted);
+  font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+}
+
+.countdown__time {
+  margin-block: 0.34rem 0.3rem !important;
+  font-size: clamp(1rem, 2vw, 1.34rem);
+  letter-spacing: 0.07em;
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 520px) {
+  .brand {
+    padding: 0.1rem;
+  }
+
+  .mood-switch button {
+    min-width: 4.25rem;
+    padding-inline: 0.7rem;
+  }
+
+  .countdown {
+    max-width: min(16rem, calc(100vw - 5rem));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --paper: #fffbe9;
+    --muted: rgba(255, 251, 233, 0.82);
+    --line: rgba(255, 251, 233, 0.42);
+    --panel: rgba(2, 8, 16, 0.78);
+  }
+}
