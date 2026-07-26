@@ -1,0 +1,33 @@
+[Unit]
+Description=Hanabi Canvas ephemeral WebSocket relay
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=hanabi
+Group=hanabi
+WorkingDirectory=/opt/hanabi-canvas/server
+EnvironmentFile=/etc/hanabi-canvas/realtime.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/hanabi-canvas/server/server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+LockPersonality=true
+UMask=027
+LimitNOFILE=8192
+TasksMax=2048
+
+[Install]
+WantedBy=multi-user.target

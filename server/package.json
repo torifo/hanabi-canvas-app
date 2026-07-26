@@ -1,0 +1,17 @@
+{
+  "name": "hanabi-canvas-realtime-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ephemeral WebSocket relay for Hanabi Canvas",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/**/*.test.js",
+    "bench:smoke": "node bench/relay-smoke.js",
+    "verify:deployment": "node deploy/verify-ws.js",
+    "validate:local": "sh deploy/validate-local.sh"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
