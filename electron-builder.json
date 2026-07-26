@@ -1,0 +1,27 @@
+{
+  "appId": "jp.hanabicanvas.app",
+  "productName": "花火と心模様",
+  "directories": {
+    "output": "release"
+  },
+  "extraMetadata": {
+    "main": "build/electron/main.js"
+  },
+  "files": [
+    "dist/**",
+    "build/electron/**",
+    "package.json"
+  ],
+  "mac": {
+    "icon": "resources/icon.png",
+    "target": ["dmg"]
+  },
+  "win": {
+    "icon": "resources/icon.png",
+    "target": ["nsis"]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}
