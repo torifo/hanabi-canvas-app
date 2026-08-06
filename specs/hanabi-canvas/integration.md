@@ -11,7 +11,7 @@ GPT-5.6（Sol / Terra / Luna）の成果物を受け入れて Phase 1 結合（T
 |---|------|--------|------|
 | D1 | 座標系の定義 | Terra / Sol | SparkMessage の x, y は「ウィンドウ座標」ではなく**横長ベースイラストのシーン座標系 (0,0)–(1,1)**。変換は GraphicsEngine.`toSceneCoords(clientX, clientY)`（Fable実装）が担い、Terra は 0–1 値を素通し、Sol は pointer 座標を変換してから `sendSpark` に渡す |
 | D2 | GraphicsEngine 契約 | Sol | `toSceneCoords` メソッドが契約に追加済み（[design.md](design.md) 参照） |
-| D3 | lowpassFreq の所有権 | Luna | 具体値は Luna が決定・更新権を持つ。scaffold 実装値 quiet = 1200Hz を現行値として採用済み（`src/moods.ts`） |
+| D3 | lowpassFreq の所有権 | Luna | 具体値は Luna が決定・更新権を持つ。現行値は quiet = 2000Hz（`src/moods.ts`） |
 | D4 | 共有定数 | Sol / Luna | `MOOD_TRANSITION_MS = 1200` を `src/types.ts` に追加し、graphics / audio のイージング時間を統一 |
 | D5 | メッセージサイズ | Terra | 実送信100B未満は目標値、サーバー受信上限256B（超過破棄）は防御値 — 両立で確定 |
 | D6 | イントロ遷移 (FR-014) | Sol | `IntroOverlay`（Fable実装）の `onEnter` で `SoundEngine.init()` を呼ぶ配線が main.ts に必要。autoplay制約解除の起点をイントロタップに変更（従来の「初回 pointerdown」より前倒し） |

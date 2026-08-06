@@ -5,7 +5,8 @@ type TrackId = 'crackle' | 'waves' | 'rain' | 'insects';
 interface TrackDefinition {
   id: TrackId;
   file: string;
-  gain: number;
+  sparkleGain: number;
+  quietGain: number;
 }
 
 interface ActiveTrack {
@@ -14,19 +15,19 @@ interface ActiveTrack {
 }
 
 const TRACKS: readonly TrackDefinition[] = [
-  { id: 'crackle', file: 'crackle-loop.wav', gain: 0.13 },
-  { id: 'waves', file: 'waves-loop.wav', gain: 0.21 },
-  { id: 'rain', file: 'rain-loop.wav', gain: 0.16 },
-  { id: 'insects', file: 'insects-loop.wav', gain: 0.09 },
+  // Do not present procedural substitutes as a firework recording. These stay
+  // muted until a licensed, authored field recording replaces the placeholders.
+  { id: 'crackle', file: 'crackle-loop.wav', sparkleGain: 0, quietGain: 0 },
+  { id: 'waves', file: 'waves-loop.wav', sparkleGain: 0, quietGain: 0 },
+  { id: 'rain', file: 'rain-loop.wav', sparkleGain: 0, quietGain: 0 },
+  { id: 'insects', file: 'insects-loop.wav', sparkleGain: 0, quietGain: 0 },
 ];
 
 const QUIET_AMBIENT_GAIN = 0.48;
 const SPARKLE_AMBIENT_GAIN = 0.68;
 const MUTED_GAIN = 0.0001;
-// Mobile speaker calibration: the four ambience tracks can sum to 0.59 before
-// mood scaling.  0.59 × 0.68 × 0.78 ≈ 0.31 leaves headroom for the sparkle
-// one-shot instead of asking small iPhone/Android speakers to reproduce a
-// brittle, clipped peak. Adjust only after listening on real mobile hardware.
+// No synthetic ambience is audible until it can be replaced with a licensed,
+// authored recording that fits the illustration and the chosen location.
 const MOBILE_SPEAKER_MASTER_GAIN = 0.78;
 // 契約 D4: ムード遷移は MOOD_TRANSITION_MS (1200ms) を graphics と共用。
 // setTargetAtTime は指数収束のため、遷移時間の 1/3 を時定数とする (3τ ≒ 95% 収束)
@@ -37,8 +38,8 @@ const TRANSITION_SECONDS = MOOD_TRANSITION_MS / 3000;
  *
  * Ambient assets are generated in-repository and are periodic WAVs.  The
  * buffers can therefore use native loop points without introducing a fade or
- * re-scheduling gap at each iteration.  Every track has an independent gain,
- * while one shared filter and master gain make mood changes coherent.
+ * re-scheduling gap at each iteration. Every track has a per-mood gain, while
+ * one shared filter and master gain make mood changes coherent.
  */
 export class SoundEngine implements SoundEngineContract {
   private context: AudioContext | null = null;
@@ -47,7 +48,6 @@ export class SoundEngine implements SoundEngineContract {
   private lowpass: BiquadFilterNode | null = null;
   private sparkleGain: GainNode | null = null;
   private readonly tracks = new Map<TrackId, ActiveTrack>();
-  private sparkleBuffer: AudioBuffer | null = null;
   private initPromise: Promise<void> | null = null;
   private initialized = false;
   private lifecycle = 0;
@@ -91,28 +91,15 @@ export class SoundEngine implements SoundEngineContract {
     const targetFrequency = profile.lowpassFreq ?? bypassFrequency;
     this.smoothParameter(this.lowpass.frequency, targetFrequency, now);
     this.smoothParameter(this.lowpass.Q, profile.lowpassFreq === null ? 0.0001 : 0.45, now);
+    for (const track of TRACKS) {
+      const active = this.tracks.get(track.id);
+      if (active) this.smoothParameter(active.gain.gain, this.gainForMood(track), now);
+    }
   }
 
   playSparkle(): void {
-    if (!this.context || !this.sparkleGain || this.muted) {
-      return;
-    }
-
-    void this.resumeIfNeeded();
-    const now = this.context.currentTime;
-    if (this.sparkleBuffer) {
-      const source = this.context.createBufferSource();
-      source.buffer = this.sparkleBuffer;
-      const gain = this.context.createGain();
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.28, now + 0.008);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.min(this.sparkleBuffer.duration, 0.36));
-      source.connect(gain).connect(this.sparkleGain);
-      source.start(now);
-      return;
-    }
-
-    this.playSynthesizedSparkle(now);
+    // A synthesized "shush" or chime is not a hand-held firework. Stay silent
+    // rather than suggesting a false sound until an authored recording exists.
   }
 
   setMuted(muted: boolean): void {
@@ -161,7 +148,6 @@ export class SoundEngine implements SoundEngineContract {
     this.ambienceGain = null;
     this.lowpass = null;
     this.sparkleGain = null;
-    this.sparkleBuffer = null;
     this.initialized = false;
     this.initPromise = null;
 
@@ -221,19 +207,9 @@ export class SoundEngine implements SoundEngineContract {
 
   private async loadAssetsInBackground(lifecycle: number): Promise<void> {
     const context = this.requireContext();
-    const sparkle = this.loadBuffer('sparkle.wav', lifecycle, context)
-      .then((buffer) => {
-        if (this.isCurrentLifecycle(lifecycle)) {
-          this.sparkleBuffer = buffer;
-        }
-      })
-      .catch(() => undefined);
     // Track errors intentionally remain isolated: an offline cache miss or a
-    // malformed asset must not prevent the other ambience layers from playing.
-    await Promise.allSettled([
-      ...TRACKS.map((track) => this.loadAndStartTrack(track, lifecycle, context)),
-      sparkle,
-    ]);
+    // malformed asset must not block a later switch to authored recordings.
+    await Promise.allSettled(TRACKS.map((track) => this.loadAndStartTrack(track, lifecycle, context)));
   }
 
   private async loadAndStartTrack(
@@ -254,7 +230,7 @@ export class SoundEngine implements SoundEngineContract {
     source.loopEnd = buffer.duration;
     const startAt = context.currentTime;
     gain.gain.setValueAtTime(MUTED_GAIN, startAt);
-    gain.gain.exponentialRampToValueAtTime(track.gain, startAt + 0.12);
+    gain.gain.exponentialRampToValueAtTime(this.gainForMood(track), startAt + 0.2);
     source.connect(gain).connect(ambienceGain);
     source.start(startAt);
     this.tracks.set(track.id, { source, gain });
@@ -272,20 +248,8 @@ export class SoundEngine implements SoundEngineContract {
     return context.decodeAudioData(encoded);
   }
 
-  private playSynthesizedSparkle(now: number): void {
-    const context = this.requireContext();
-    const output = this.requireSparkleGain();
-    const gain = context.createGain();
-    const oscillator = context.createOscillator();
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(1_540, now);
-    oscillator.frequency.exponentialRampToValueAtTime(640, now + 0.16);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.15, now + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-    oscillator.connect(gain).connect(output);
-    oscillator.start(now);
-    oscillator.stop(now + 0.2);
+  private gainForMood(track: TrackDefinition): number {
+    return this.mood?.id === 'quiet' ? Math.max(MUTED_GAIN, track.quietGain) : track.sparkleGain;
   }
 
   private smoothParameter(parameter: AudioParam, value: number, now: number, timeConstant = TRANSITION_SECONDS): void {
@@ -342,10 +306,6 @@ export class SoundEngine implements SoundEngineContract {
     return this.ambienceGain;
   }
 
-  private requireSparkleGain(): GainNode {
-    if (!this.sparkleGain) throw new Error('SoundEngine has not been initialized.');
-    return this.sparkleGain;
-  }
 }
 
 function isResumableState(state: AudioContextState | 'interrupted'): boolean {

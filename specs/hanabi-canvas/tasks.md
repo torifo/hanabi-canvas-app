@@ -122,6 +122,7 @@
   - Files: `src/audio/SoundEngine.ts`（interrupted/visibility復帰、resume競合抑止、0.78マスター調整と回帰テストを実装済み — iOS/Android実機試聴が残り）
   - Done when: 実機でイントロタップ→環境音再生、バックグラウンド往復後も音が復帰する
   - Depends on: Task 3.1
+  - **音響品質の未解決課題（2026-07-27）**: 自己生成したノイズ／和音は「警告音」「送風機」「紙擦れ」「花火らしくないシュッシュ音」として受け取られたため、現在は再生を停止している。次回は、手持ち花火の火薬音を含む**許諾済みの実録素材**を選定し、Sparkle・Quietそれぞれの音量、ループ点、モバイル実機での聴感を確認してから再導入する。擬似合成音での代替はしない。
 
 
 ### Wave 7（メッセージ花火 — 設計: [message-fireworks-design.md](message-fireworks-design.md)）

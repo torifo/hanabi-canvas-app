@@ -142,7 +142,7 @@ const quiet: MoodProfile = {
   bloomStrength: 0.8,
   colorGrade: 'cyan-darknavy',
   particleSpeed: 0.5,
-  lowpassFreq: 900,
+  lowpassFreq: 2000,
 };
 
 const sparkle: MoodProfile = {
@@ -192,7 +192,7 @@ function lastTarget(param: FakeAudioParam): Automation | undefined {
 }
 
 describe('SoundEngine', () => {
-  it('returns from init without waiting for assets and can synthesize the first sparkle', async () => {
+  it('returns from init without waiting for assets and keeps synthetic sparkle audio silent', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)));
     const sound = new SoundEngine();
 
@@ -203,11 +203,10 @@ describe('SoundEngine', () => {
     expect(audio.resume).toHaveBeenCalledTimes(1);
 
     await expect(initialized).resolves.toBeUndefined();
-    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(fetch).toHaveBeenCalledTimes(4);
 
     sound.playSparkle();
-    expect(audio.oscillators).toHaveLength(1);
-    expect(audio.oscillators[0]?.starts).toEqual([4]);
+    expect(audio.oscillators).toHaveLength(0);
   });
 
   it('eases ambience gain and lowpass values for both moods', async () => {
@@ -223,7 +222,7 @@ describe('SoundEngine', () => {
       timeConstant: 0.4,
     });
     expect(lastTarget(audio.filters[0]!.frequency)).toMatchObject({
-      value: 900,
+      value: 2000,
       time: 4,
       timeConstant: 0.4,
     });
@@ -306,14 +305,14 @@ describe('SoundEngine', () => {
     const secondContext = context(1);
     resolveFirstFetch?.({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
 
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(10));
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(8));
     expect(firstContext.decodeAudioData).not.toHaveBeenCalled();
     expect(secondContext.decodeAudioData).not.toHaveBeenCalled();
     expect(firstContext.sources).toHaveLength(0);
     expect(secondContext.sources).toHaveLength(0);
 
     sound.playSparkle();
-    expect(secondContext.oscillators).toHaveLength(1);
+    expect(secondContext.oscillators).toHaveLength(0);
     expect(secondContext.sources).toHaveLength(0);
   });
 
@@ -347,5 +346,23 @@ describe('SoundEngine', () => {
 
     await vi.waitFor(() => expect(context().sources).toHaveLength(3));
     expect(context().sources.every((source) => source.loop && source.starts.length === 1)).toBe(true);
+  });
+
+  it('mutes synthetic ambience in quiet mode after tracks load', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => new ArrayBuffer(8),
+    })));
+    const sound = new SoundEngine();
+    await sound.init();
+    const audio = context();
+    await vi.waitFor(() => expect(audio.sources).toHaveLength(4));
+
+    sound.setMood(quiet);
+    // gains[0..2] are master / ambience / sparkle. Track order follows TRACKS.
+    expect(lastTarget(audio.gains[3]!.gain)).toMatchObject({ value: 0.0001 });
+    expect(lastTarget(audio.gains[4]!.gain)).toMatchObject({ value: 0.0001 });
+    expect(lastTarget(audio.gains[5]!.gain)).toMatchObject({ value: 0.0001 });
+    expect(lastTarget(audio.gains[6]!.gain)).toMatchObject({ value: 0.0001 });
   });
 });

@@ -15,6 +15,13 @@ for (const file of [...loops, 'sparkle.wav']) {
     assert.equal(wav.readUInt16LE(22), 1);
     assert.equal(wav.readUInt32LE(24), 22_050);
     assert.equal(wav.readUInt16LE(34), 16);
+    const samples = wav.readUInt32LE(40) / 2;
+    let power = 0;
+    for (let index = 0; index < samples; index += 1) {
+      const value = wav.readInt16LE(44 + index * 2) / 32_768;
+      power += value * value;
+    }
+    assert.ok(Math.sqrt(power / samples) > 0.001, 'asset must contain audible signal');
   });
 }
 
@@ -23,5 +30,8 @@ for (const file of loops) {
     const wav = await readFile(resolve(audioDirectory, file));
     const samples = wav.readUInt32LE(40) / 2;
     assert.equal(samples, 22_050 * 8);
+    const firstSample = wav.readInt16LE(44);
+    const lastSample = wav.readInt16LE(44 + (samples - 1) * 2);
+    assert.equal(lastSample, firstSample, 'loop boundary must not introduce a click');
   });
 }

@@ -13,6 +13,8 @@ export const MOOD_PROFILES: Readonly<Record<MoodId, MoodProfile>> = {
     bloomStrength: 0.8,
     colorGrade: 'cyan-darknavy',
     particleSpeed: 0.62,
-    lowpassFreq: 1200
+    // 1.2kHz removed too much texture from rain and waves, leaving a fan-like
+    // low-frequency wash. Keep the quiet palette while retaining soft detail.
+    lowpassFreq: 2000
   }
 };
