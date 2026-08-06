@@ -77,6 +77,11 @@ input {
   opacity: 0.72;
 }
 
+/* 静けさは鑑賞モード。照準ではなく、花火をそっとなぞるためのカーソルにする。 */
+:root[data-mood="quiet"] #hanabi-canvas {
+  cursor: default;
+}
+
 :root[data-entered="true"] #hanabi-canvas {
   transform: scale(1);
 }

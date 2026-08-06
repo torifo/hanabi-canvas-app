@@ -86,12 +86,24 @@ class AppCore {
   }
 
   private applyMood(mood: MoodId): void {
+    // 静けさでは、押下中のチャージを残さない。ここで解除しておけば
+    // ムードを切り替えた直後の pointerup でも火花は上がらない。
+    if (mood === 'quiet' && this.activePointerId !== null) {
+      this.dependencies.graphics.endCharge();
+      this.releasePointer(this.activePointerId);
+    }
     this.currentMood = mood;
     const profile = MOOD_PROFILES[mood];
     this.dependencies.graphics.setMood(profile);
     this.dependencies.sound.setMood(profile);
     document.documentElement.dataset.mood = mood;
     this.status.textContent = mood === 'sparkle' ? '高鳴りの心模様' : '静けさの心模様';
+    this.canvas.setAttribute(
+      'aria-label',
+      mood === 'sparkle'
+        ? '触れると光が灯る花火のキャンバス'
+        : '静けさの花火のキャンバス。花火にカーソルを重ねると静かに光ります'
+    );
   }
 
   private ensureSound = (): Promise<void> => {
@@ -110,6 +122,10 @@ class AppCore {
   private onPointerDown = (event: PointerEvent): void => {
     if (this.activePointerId !== null || event.button !== 0) return;
     event.preventDefault();
+
+    // Quiet Mode は鑑賞専用。GraphicsEngine 側の pointermove による
+    // 常駐花火のホバー発光だけを残し、打ち上げ・メッセージ・気配送信・音は起動しない。
+    if (this.currentMood === 'quiet') return;
 
     const scene = this.dependencies.graphics.toSceneCoords(event.clientX, event.clientY);
     // 打ち上げ前の玉に触れたら、火花ではなく入力欄を開く
