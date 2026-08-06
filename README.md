@@ -20,7 +20,22 @@ An ambient canvas that layers light, sparks, and sound over a single night scene
 
 > 現在開発中です。Web/PWA、macOS向けElectronビルド、Wallpaper Engine互換ビルドを中心に検証しています。
 
-<!-- 公開時に、イントロ画面と縦横の常駐シーン画像をここへ追加する -->
+<p align="center">
+  <img src="docs/images/desktop.png" alt="海と大橋の上に三輪の花火が滞留する夜のキャンバス。橋のたもとに打ち上げ前の玉が置かれている" width="880">
+</p>
+
+<table>
+  <tr>
+    <td width="62%" valign="top">
+      <img src="docs/images/intro.png" alt="紙の質感の明るいイントロ画面。細い線画の花火とサービス名が淡く縦に置かれている" width="100%">
+      <p align="center"><sub>触れて入る、紙のような入口</sub></p>
+    </td>
+    <td width="38%" valign="top" align="center">
+      <img src="docs/images/mobile.png" alt="モバイル縦画面。三輪が縦に積み直され、橋と水面反射が収まっている" width="228">
+      <p align="center"><sub>モバイルは縦の構図へ組み直す</sub></p>
+    </td>
+  </tr>
+</table>
 
 ## ✦ こんな時に
 
@@ -168,6 +183,7 @@ npm run electron:build   # macOS DMG（WindowsではNSIS）
 
 - [Mobile PWA verification](docs/mobile-pwa-verification.md)
 - [VPS deployment runbook](server/deploy/README.md)
+- [Docker / GHCR deployment](deploy/README.md)
 
 ## ✦ プライバシー
 
