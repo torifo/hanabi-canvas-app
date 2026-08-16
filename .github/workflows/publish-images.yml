@@ -1,0 +1,88 @@
+name: イメージの公開
+
+# web（dist入りnginx）と relay（匿名中継）を linux/amd64 で作り、GHCR へ送る。
+# VPS は compose がこのイメージを引くだけで、ソースを置かない。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'server/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'deploy/**'
+      - '.github/workflows/publish-images.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 依存を入れて検証する
+        run: |
+          npm ci
+          npm ci --prefix server
+          npm run test:web
+          npm run test:server
+
+      - name: Web を本番ビルドする
+        # VITE_PRESENCE_URL は設定しない。本番は同一オリジンの /ws を自動で使う
+        run: npm run build
+
+      - name: タグを決める
+        id: meta
+        run: echo "tag=$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: web イメージ
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/web.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/hanabi-canvas-web:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/hanabi-canvas-web:latest
+
+      - name: relay イメージ
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          file: server/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/hanabi-canvas-realtime:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/hanabi-canvas-realtime:latest
+
+      - name: 使うタグを知らせる
+        run: |
+          echo "### 公開したタグ" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "IMAGE_TAG=${{ steps.meta.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "VPS の /home/ubuntu/app/hanabi-canvas/deploy/.env をこのタグに変えて \`docker compose up -d\`" >> "$GITHUB_STEP_SUMMARY"
