@@ -60,11 +60,32 @@ export interface PresenceClient {
   dispose(): void;
 }
 
+/** 開催の見込み。cancelled / postponed はカウントダウンの対象から外す */
+export type HanabiEventStatus = 'announced' | 'provisional' | 'cancelled' | 'postponed';
+
 export interface HanabiEvent {
   id: string;
   name: string;
   prefecture: string;
+  /** 開催日時 ISO 8601 (+09:00) */
   date: string;
+
+  // --- 以下は任意。無くても従来どおり動く ---
+  /** 都道府県をまたぐ広域のまとまり（例: 東京多摩エリア）。県境で切れない括りを表す */
+  area?: string;
+  /** 市区町村（例: 府中市） */
+  municipality?: string;
+  /** 会場（例: 東京競馬場） */
+  venue?: string;
+  /** 主催者・自治体の公式発表ページ */
+  officialUrl?: string;
+  /** 未指定は announced として扱う */
+  status?: HanabiEventStatus;
+  /** 収集元（自動収集で入った場合に付く） */
+  source?: string;
+  sourceUrl?: string;
+  /** 公式発表で人が確認済み。自動収集はこのレコードを上書きしない */
+  verified?: boolean;
 }
 
 export interface Countdown {
@@ -75,8 +96,11 @@ export interface Countdown {
 
 export interface HanabiSchedule {
   load(url: string): Promise<HanabiEvent[]>;
+  /** 直近の1件。カウントダウンの表示はこの1件だけを使う */
   nextEvent(now: Date): HanabiEvent | null;
   countdown(now: Date): Countdown | null;
+  /** これから開催される分の一覧。中止・延期は含まない */
+  upcoming(now: Date, limit?: number): HanabiEvent[];
 }
 
 export interface UIController {
