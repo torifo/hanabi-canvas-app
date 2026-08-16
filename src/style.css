@@ -320,6 +320,34 @@ input {
   letter-spacing: 0.1em;
 }
 
+/* 出典表記。CC BY-SA は表示のたびに出典とライセンスの明示を求めるため常に出す。
+   リンクだけは押せるように、非インタラクティブな countdown の中で例外にする */
+.countdown__source {
+  margin-block-start: 0.4rem !important;
+  color: var(--muted);
+  font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  opacity: 0.7;
+}
+
+.countdown__source:empty {
+  display: none;
+}
+
+.countdown__source a {
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.countdown__source a:hover,
+.countdown__source a:focus-visible {
+  color: var(--paper);
+}
+
 .countdown__time {
   margin-block: 0.34rem 0.3rem !important;
   font-size: clamp(1rem, 2vw, 1.34rem);
