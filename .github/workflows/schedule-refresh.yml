@@ -1,0 +1,78 @@
+name: 花火日程の収集
+
+# 全国の名簿と開催日を自動で集め、差分があればPRを出す。
+# 取り込みは人がPRをマージしたときだけ起きる。中止・延期・時刻変更は
+# 自動判定できないため、この収集結果は provisional のまま扱う。
+on:
+  schedule:
+    # 毎週月曜 03:00 JST (18:00 UTC 日曜)
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 収集して日程を更新する
+        id: collect
+        run: |
+          {
+            echo 'summary<<COLLECT_EOF'
+            node scripts/collect-schedule.mjs
+            echo 'COLLECT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 取り込める形か確かめる
+        run: |
+          npm ci
+          npx vitest run tests/HanabiSchedule.test.ts tests/collectSchedule.test.ts
+
+      - name: 差分があればPRを出す
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: schedule/auto-refresh
+          base: main
+          add-paths: public/data/hanabi-schedule.json
+          commit-message: |
+            Refresh the nationwide hanabi schedule
+
+            Collected from the Japanese Wikipedia list of fireworks festivals
+            (CC BY-SA). Dates resolved from the listed expressions are marked
+            provisional until an official announcement confirms them.
+
+            ---
+
+            全国の花火日程を更新
+
+            日本語版Wikipedia「日本の花火大会一覧」(CC BY-SA) から収集。
+            一覧の表現から解決した日付は、公式発表で確認されるまで暫定として扱う。
+          title: 花火日程の自動更新
+          body: |
+            週次の収集ジョブが拾った差分です。中身を確かめてからマージしてください。
+
+            ```
+            ${{ steps.collect.outputs.summary }}
+            ```
+
+            **確認したいところ**
+
+            - 日付が飛んでいないか（一覧の表現を解決しているため、実際の告知とずれることがあります）
+            - 中止・延期が反映されていないか（自動では判定できません）
+            - 見に覚えのない大会が混ざっていないか
+
+            公式発表で確認できたものは、そのレコードに `"verified": true` を足してください。
+            以降その1件は収集で上書きされなくなります。
+
+            情報源: [日本の花火大会一覧](https://ja.wikipedia.org/wiki/日本の花火大会一覧) (CC BY-SA 4.0)
+          labels: schedule
+          delete-branch: true
