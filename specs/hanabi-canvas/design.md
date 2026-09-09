@@ -68,7 +68,7 @@ interface SparkMessage {
 // サーバーは JSON.parse 失敗・type不一致のメッセージを黙って破棄する
 ```
 
-**座標系の定義（Fable/Terra 合意事項）**: x, y はウィンドウ座標ではなく、**横長ベースイラスト全体を (0,0)–(1,1) とするシーン座標系**で正規化する。cover表示・縦アセット表示でトリミングされた領域差を吸収し、全端末で火花が同じ「場所」に着弾する。スクリーン⇔シーンの変換は GraphicsEngine が提供し（`toSceneCoords(clientX, clientY)`）、PresenceClient は変換済みの値のみを扱う。受信座標が自端末の表示範囲外の場合、GraphicsEngine は最寄りの表示端にクランプして控えめに表示する。
+**座標系の定義（Fable/Terra 合意事項）**: x, y はウィンドウ座標ではなく、**横長ベースイラスト全体を (0,0)–(1,1) とするシーン座標系**で正規化する。スクリーン⇔シーンの変換は GraphicsEngine が提供し（`toSceneCoords(clientX, clientY)`）、PresenceClient は変換済みの値のみを扱う。受信側の GraphicsEngine は、受信した (x, y) をシーン全体に対する相対位置として**自端末の可視範囲へ射影**し、常駐の輪と重なる場合は輪の外へ逃がして遠景層に描く。同じ位置に着弾することは保証しない（詳細は [remote-spark-depth-design.md](remote-spark-depth-design.md)）。
 
 ### 2. モジュール公開API（main.ts が呼ぶ面）
 
