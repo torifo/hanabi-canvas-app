@@ -326,9 +326,11 @@ input {
   color: var(--muted);
   font-family: "Hiragino Kaku Gothic ProN", sans-serif;
   font-size: 0.56rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.03em;
   line-height: 1.6;
   opacity: 0.7;
+  /* 末尾1文字だけの折り返しを避ける。未対応ブラウザでは通常の折り返し */
+  text-wrap: balance;
 }
 
 /* 出典表記。CC BY-SA は表示のたびに出典とライセンスの明示を求めるため常に出す。
