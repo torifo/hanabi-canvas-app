@@ -11,6 +11,7 @@ export class UIController implements UIControllerContract {
   private countdownElement: HTMLElement | null = null;
   private eventElement: HTMLElement | null = null;
   private sourceElement: HTMLElement | null = null;
+  private noteElement: HTMLElement | null = null;
 
   init(root: HTMLElement): void {
     root.innerHTML = `
@@ -29,9 +30,10 @@ export class UIController implements UIControllerContract {
           <span>誰かの気配</span>
         </label>
       </section>
-      <aside class="countdown" aria-live="polite">
+      <aside class="countdown">
+        <p class="countdown__note">気配の火花は、画面の大きさで届く場所が変わります</p>
         <p class="countdown__label">次の花火まで</p>
-        <p class="countdown__time">静かに探しています</p>
+        <p class="countdown__time" aria-live="polite">静かに探しています</p>
         <p class="countdown__event"></p>
         <p class="countdown__source"></p>
       </aside>
@@ -40,6 +42,7 @@ export class UIController implements UIControllerContract {
     this.countdownElement = root.querySelector('.countdown__time');
     this.eventElement = root.querySelector('.countdown__event');
     this.sourceElement = root.querySelector('.countdown__source');
+    this.noteElement = root.querySelector('.countdown__note');
 
     const buttons = root.querySelectorAll<HTMLButtonElement>('[data-mood]');
     for (const button of buttons) {
@@ -56,6 +59,8 @@ export class UIController implements UIControllerContract {
 
     root.querySelector<HTMLInputElement>('.presence-toggle input')?.addEventListener('change', (event) => {
       const enabled = (event.currentTarget as HTMLInputElement).checked;
+      // 気配を受け取らないなら、届く場所の注釈も要らない
+      if (this.noteElement) this.noteElement.hidden = !enabled;
       this.presenceCallbacks.forEach((callback) => callback(enabled));
     });
   }

@@ -1,5 +1,6 @@
 import { messagePalette, type MessagePalette } from '../messages/messageColor';
 import { findPlacement, type Circle, type Rect } from '../messages/placement';
+import { placeRemoteSpark } from './remoteSpark';
 import {
   MOOD_TRANSITION_MS,
   type GraphicsEngine as GraphicsEngineContract,
@@ -37,6 +38,20 @@ const PORTRAIT_VISIBLE_X = { min: 533, max: 907 };
 const RISE_DURATION_MS = 1150;
 // 遠景に残す上限。これを超えた古いものは消す（描画コストの上限にもなる）
 const FAR_LIMIT = 24;
+// 遠景層の定義。これ未満の花火は文字を読めず、消せない
+const FAR_THRESHOLD = 0.6;
+
+// 気配の火花（遠景層）。自分の火花より小さく・遅く・淡く、遅れて開く
+const FAR_PARTICLES = 0.30;
+const FAR_SIZE = 0.6;
+const FAR_SPEED = 0.7;
+const FAR_GRAVITY = 0.016;
+const FAR_ALPHA = 0.7;
+const FAR_HAZE = 0.25;
+const FAR_DELAY_MIN_MS = 240;
+const FAR_DELAY_MAX_MS = 420;
+const FAR_GLOW_RADIUS = 90;
+const FAR_GLOW_MS = 420;
 
 // 橋のたもとに置かれた打ち上げ前の玉。x は可視範囲から毎回求める
 // （固定座標だと画面比率によっては cover クロップで画面外へ出てしまう）
@@ -133,6 +148,7 @@ interface Cloud extends CloudConfig {
 
 interface Star { x: number; y: number; vx: number; vy: number; life: number; drag: number; size: number; color: string; phase: number; }
 interface Flash { x: number; y: number; t0: number; color: string; }
+interface PendingRemote { x: number; y: number; at: number; }
 interface DeckLight { x: number; y: number; size: number; tw: number; phase: number; a: number; }
 interface Fly { x: number; y: number; ph: number; sp: number; }
 
@@ -151,6 +167,9 @@ export class GraphicsEngine implements GraphicsEngineContract {
   private deckLights: DeckLight[] = [];
   private flies: Fly[] = [];
   private stars: Star[] = [];
+  private farStars: Star[] = [];
+  private farGlows: Flash[] = [];
+  private pendingRemote: PendingRemote[] = [];
   private flashes: Flash[] = [];
   private readonly sprites = new Map<string, HTMLCanvasElement>();
 
@@ -253,20 +272,19 @@ export class GraphicsEngine implements GraphicsEngineContract {
       hit.pulseT0 = performance.now();
       return false;
     }
-    this.burst(sx, sy, 0.35 + charge * 0.65, false);
+    this.burst(sx, sy, 0.35 + charge * 0.65);
     return true;
   }
 
   emitRemoteSpark(x: number, y: number): void {
-    const sx = x * W;
-    const sy = y * H;
-    const hit = this.cloudAt(sx, sy);
-    if (hit) {
-      hit.pulseT0 = performance.now();
-      return;
-    }
-    // リモートの気配は控えめに
-    this.burst(sx, sy, 0.22, true);
+    const now = performance.now();
+    const view = this.visibleScene();
+    const placed = placeRemoteSpark(x, y, view, this.clouds);
+    // 射影先が輪に重なっていたなら、触れられた輪として応える
+    const hit = this.cloudAt(view.minX + x * (view.maxX - view.minX), view.minY + y * (view.maxY - view.minY));
+    if (hit) hit.pulseT0 = now;
+    const delay = FAR_DELAY_MIN_MS + Math.random() * (FAR_DELAY_MAX_MS - FAR_DELAY_MIN_MS);
+    this.pendingRemote.push({ x: placed.x, y: placed.y, at: now + delay });
   }
 
   beginCharge(x: number, y: number): void {
@@ -394,7 +412,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
     // 手前層だけが読める。遠景の光には触れられない
     for (let i = this.messages.length - 1; i >= 0; i--) {
       const bloom = this.messages[i]!;
-      if (bloom.near < 0.6 || bloom.rise < 1) continue;
+      if (bloom.near < FAR_THRESHOLD || bloom.rise < 1) continue;
       const r = MESSAGE_RADIUS * bloom.near;
       if (Math.hypot(sx - bloom.x, (sy - bloom.y) / 0.94) <= r) {
         // タップでも読めるよう、しばらくラベルを出したままにする
@@ -522,6 +540,9 @@ export class GraphicsEngine implements GraphicsEngineContract {
     this.canvas?.removeEventListener('pointermove', this.onPointerMove);
     this.canvas?.removeEventListener('pointerleave', this.onPointerLeave);
     this.stars = [];
+    this.farStars = [];
+    this.farGlows = [];
+    this.pendingRemote = [];
     this.flashes = [];
     this.clouds = [];
     this.messages = [];
@@ -616,11 +637,10 @@ export class GraphicsEngine implements GraphicsEngineContract {
     return c;
   }
 
-  private burst(x: number, y: number, intensity: number, remote: boolean): void {
+  private burst(x: number, y: number, intensity: number): void {
     const shell = this.moodMix > 0.5 ? SPARK_SHELLS.quiet : SPARK_SHELLS.sparkle;
     const n = Math.round(140 * intensity);
     const v0 = shell.v0 * (0.55 + 0.45 * intensity);
-    const dim = remote ? 0.5 : 1;
     for (let i = 0; i < n; i++) {
       const ang = Math.random() * Math.PI * 2;
       const rr = Math.pow(Math.random(), 0.42);
@@ -630,9 +650,9 @@ export class GraphicsEngine implements GraphicsEngineContract {
         x, y,
         vx: Math.cos(ang) * v,
         vy: Math.sin(ang) * v * 0.96,
-        life: (0.85 + Math.random() * 0.55) * dim,
+        life: 0.85 + Math.random() * 0.55,
         drag: 0.964 + Math.random() * 0.012,
-        size: (2.2 + Math.random() * 3.4) * (remote ? 0.7 : 1),
+        size: 2.2 + Math.random() * 3.4,
         color,
         phase: Math.random() * 9
       });
@@ -641,19 +661,99 @@ export class GraphicsEngine implements GraphicsEngineContract {
     for (let i = 0; i < gl; i++) {
       const ang = Math.random() * Math.PI * 2;
       const v = v0 * (0.1 + 0.5 * Math.random());
-      this.stars.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life: (0.5 + Math.random() * 0.9) * dim, drag: 0.955, size: 1 + Math.random() * 1.6, color: shell.glitter, phase: Math.random() * 9 });
+      this.stars.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life: 0.5 + Math.random() * 0.9, drag: 0.955, size: 1 + Math.random() * 1.6, color: shell.glitter, phase: Math.random() * 9 });
     }
-    if (!remote) {
-      this.flashes.push({ x, y, t0: performance.now(), color: shell.colors[1] });
-      // 最寄りの常駐輪をパルスさせる
-      let nearest: Cloud | null = null;
-      let best = Infinity;
-      for (const c of this.clouds) {
-        const d = (c.cx - x) ** 2 + (c.cy - y) ** 2;
-        if (d < best) { best = d; nearest = c; }
+    this.flashes.push({ x, y, t0: performance.now(), color: shell.colors[1] });
+    // 最寄りの常駐輪をパルスさせる
+    let nearest: Cloud | null = null;
+    let best = Infinity;
+    for (const c of this.clouds) {
+      const d = (c.cx - x) ** 2 + (c.cy - y) ** 2;
+      if (d < best) { best = d; nearest = c; }
+    }
+    if (nearest) nearest.pulseT0 = performance.now();
+  }
+
+  /** 気配の火花。遠景層に小さく・遅く・淡く散り、閃光の代わりに淡いにじみを置く */
+  private burstFar(x: number, y: number): void {
+    const quiet = this.moodMix > 0.5;
+    const shell = quiet ? SPARK_SHELLS.quiet : SPARK_SHELLS.sparkle;
+    const haze = (quiet ? QUIET_PALETTE : SPARKLE_PALETTE).sky[2]![1];
+    const tint = (hex: string) => mixHex(hex, haze, FAR_HAZE);
+    const n = Math.round(140 * FAR_PARTICLES);
+    const v0 = shell.v0 * FAR_SPEED;
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const rr = Math.pow(Math.random(), 0.42);
+      const v = v0 * (0.22 + 0.78 * rr);
+      const color = rr > 0.72 ? shell.colors[2] : rr > 0.34 ? shell.colors[1] : shell.colors[0];
+      this.farStars.push({
+        x, y,
+        vx: Math.cos(ang) * v,
+        vy: Math.sin(ang) * v * 0.96,
+        life: (0.85 + Math.random() * 0.55) * 0.85,
+        drag: 0.964 + Math.random() * 0.012,
+        size: (2.2 + Math.random() * 3.4) * FAR_SIZE,
+        color: tint(color),
+        phase: Math.random() * 9
+      });
+    }
+    const gl = Math.round(45 * FAR_PARTICLES);
+    for (let i = 0; i < gl; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const v = v0 * (0.1 + 0.5 * Math.random());
+      this.farStars.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life: (0.5 + Math.random() * 0.9) * 0.85, drag: 0.955, size: (1 + Math.random() * 1.6) * FAR_SIZE, color: tint(shell.glitter), phase: Math.random() * 9 });
+    }
+    this.farGlows.push({ x, y, t0: performance.now(), color: tint(shell.colors[1]) });
+  }
+
+  /** 火花の粒を進めて描く。遠景層は重力が弱く、不透明度の上限が低い */
+  private stepStars(ctx: CanvasRenderingContext2D, stars: Star[], now: number, dtf: number, speedProp: number, far: boolean): Star[] {
+    const gravity = far ? FAR_GRAVITY : 0.022;
+    const alphaCap = far ? FAR_ALPHA : 1;
+    const kept: Star[] = [];
+    for (const p of stars) {
+      p.life -= dtf * 0.0155 * speedProp;
+      if (p.life <= 0) continue;
+      kept.push(p);
+      p.vx *= Math.pow(p.drag, dtf);
+      p.vy = p.vy * Math.pow(p.drag, dtf) + gravity * dtf * speedProp;
+      p.x += p.vx * dtf * speedProp;
+      p.y += p.vy * dtf * speedProp;
+      let a = Math.pow(p.life, 1.4) * (0.72 + 0.28 * Math.sin(now * 0.02 + p.phase));
+      if (p.life < 0.38 && Math.sin(now * 0.045 + p.phase * 7) < -0.1) a *= 0.15;
+      const s = p.size * (0.7 + 0.3 * p.life);
+      ctx.globalAlpha = Math.min(Math.max(a, 0), alphaCap);
+      ctx.drawImage(this.sprite(p.color), p.x - s, p.y - s, s * 2, s * 2);
+    }
+    ctx.globalAlpha = 1;
+    return kept;
+  }
+
+  /** 遅延を待っていた気配を開き、遠景のにじみと粒を常駐輪より奥に描く */
+  private drawFarLayer(ctx: CanvasRenderingContext2D, now: number, dtf: number, speedProp: number): void {
+    if (this.pendingRemote.length) {
+      const waiting: PendingRemote[] = [];
+      for (const r of this.pendingRemote) {
+        if (now >= r.at) this.burstFar(r.x, r.y);
+        else waiting.push(r);
       }
-      if (nearest) nearest.pulseT0 = performance.now();
+      this.pendingRemote = waiting;
     }
+    const glows: Flash[] = [];
+    for (const g of this.farGlows) {
+      const e = (now - g.t0) / FAR_GLOW_MS;
+      if (e >= 1) continue;
+      glows.push(g);
+      const rad = FAR_GLOW_RADIUS * (0.7 + 0.3 * e);
+      const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, rad);
+      grad.addColorStop(0, rgba(g.color, 0.18 * (1 - e)));
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(g.x - rad, g.y - rad, rad * 2, rad * 2);
+    }
+    this.farGlows = glows;
+    this.farStars = this.stepStars(ctx, this.farStars, now, dtf, speedProp, true);
   }
 
   private step(now: number, dtf: number): void {
@@ -669,6 +769,9 @@ export class GraphicsEngine implements GraphicsEngineContract {
     const ctx = this.fctx;
     ctx.clearRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
+
+    // 気配の火花は常駐輪の向こう側
+    this.drawFarLayer(ctx, now, dtf, speedProp);
 
     for (const c of this.clouds) {
       let bloomA = 1;
@@ -862,22 +965,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
     this.drawMessages(ctx, now, dtf, speedProp);
 
     // タップ火花（物理パーティクル）
-    const keptStars: Star[] = [];
-    for (const p of this.stars) {
-      p.life -= dtf * 0.0155 * speedProp;
-      if (p.life <= 0) continue;
-      keptStars.push(p);
-      p.vx *= Math.pow(p.drag, dtf);
-      p.vy = p.vy * Math.pow(p.drag, dtf) + 0.022 * dtf * speedProp;
-      p.x += p.vx * dtf * speedProp;
-      p.y += p.vy * dtf * speedProp;
-      let a = Math.pow(p.life, 1.4) * (0.72 + 0.28 * Math.sin(now * 0.02 + p.phase));
-      if (p.life < 0.38 && Math.sin(now * 0.045 + p.phase * 7) < -0.1) a *= 0.15;
-      const s = p.size * (0.7 + 0.3 * p.life);
-      ctx.globalAlpha = Math.max(a, 0);
-      ctx.drawImage(this.sprite(p.color), p.x - s, p.y - s, s * 2, s * 2);
-    }
-    this.stars = keptStars;
+    this.stars = this.stepStars(ctx, this.stars, now, dtf, speedProp, false);
 
     // 長押しチャージの光の溜まり
     if (this.charge) {
@@ -1057,7 +1145,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
         ? Math.hypot(hover.x - bloom.x, (hover.y - bloom.y) / 0.94) <= MESSAGE_RADIUS * bloom.near
         : false;
       const isPinned = this.pinned !== null && this.pinned.id === bloom.record.id && now < this.pinned.until;
-      const revealing = (pointerOver || isPinned) && bloom.near > 0.6;
+      const revealing = (pointerOver || isPinned) && bloom.near > FAR_THRESHOLD;
       bloom.hoverA += ((revealing ? 1 : 0) - bloom.hoverA) * Math.min(1, dtf * 0.09);
 
       const age = (now - bloom.bornAt) / 1000;
@@ -1235,7 +1323,7 @@ export class GraphicsEngine implements GraphicsEngineContract {
     let target: MessageBloom | null = null;
     for (let i = this.messages.length - 1; i >= 0; i--) {
       const bloom = this.messages[i]!;
-      if (bloom.hoverA > 0.15 && bloom.near > 0.6) { target = bloom; break; }
+      if (bloom.hoverA > 0.15 && bloom.near > FAR_THRESHOLD) { target = bloom; break; }
     }
     if (!target) { this.dismissHit = null; return; }
 
@@ -1501,6 +1589,14 @@ function spawnPart(c: CloudConfig): CloudPart {
 function rgba(hex: string, a: number): string {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/** 2色を t で混ぜる（大気遠近: 遠くの火花を空の色へ寄せる） */
+function mixHex(a: string, b: string, t: number): string {
+  const na = parseInt(a.slice(1), 16);
+  const nb = parseInt(b.slice(1), 16);
+  const ch = (shift: number) => Math.round(((na >> shift) & 255) * (1 - t) + ((nb >> shift) & 255) * t);
+  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0').toUpperCase()}`;
 }
 
 function clamp01(v: number): number {
