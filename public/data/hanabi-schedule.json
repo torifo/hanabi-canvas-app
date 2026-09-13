@@ -2031,6 +2031,16 @@
     "officialUrl": "https://www.yagi-hanabi.com/"
   },
   {
+    "id": "wp-愛知県奥町花火-2026",
+    "name": "奥町花火",
+    "prefecture": "愛知県",
+    "date": "2026-08-14T19:30:00+09:00",
+    "status": "provisional",
+    "source": "wikipedia",
+    "sourceUrl": "https://ja.wikipedia.org/wiki/%E6%97%A5%E6%9C%AC%E3%81%AE%E8%8A%B1%E7%81%AB%E5%A4%A7%E4%BC%9A%E4%B8%80%E8%A6%A7",
+    "municipality": "一宮市"
+  },
+  {
     "id": "suwako-2026",
     "name": "諏訪湖祭湖上花火大会",
     "prefecture": "長野県",
