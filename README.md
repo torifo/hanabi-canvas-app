@@ -18,7 +18,7 @@
 
 An ambient canvas that layers light, sparks, and sound over a single night scene — no accounts, no metrics, just a quiet place to be.
 
-> 現在開発中です。Web/PWA、macOS向けElectronビルド、Wallpaper Engine互換ビルドを中心に検証しています。
+> Web版は https://hanabi-canvas.riumu.net で稼働中です。macOS向けElectronビルド、Wallpaper Engine互換ビルド、実機でのPWA確認は検証を続けています。
 
 <p align="center">
   <img src="docs/images/desktop.png" alt="海と大橋の上に三輪の花火が滞留する夜のキャンバス。橋のたもとに打ち上げ前の玉が置かれている" width="880">
@@ -68,7 +68,7 @@ An ambient canvas that layers light, sparks, and sound over a single night scene
 
 いいね、フォロワー数、閲覧数、ランキングはありません。
 
-自分が灯した火花は、接続中の誰かの画面で小さく弾けます。誰が灯したかは分からず、履歴にも残りません。存在を主張するのではなく、「今、どこかにも誰かがいる」と静かに感じるための一時的なつながりです。
+自分が灯した火花は、接続中の誰かの画面で小さく弾けます。届いた火花は、その端末で見えている空へ位置を射影し、常駐の輪の向こう側に遠景として小さく開きます。画面の大きさで届く場所が変わるため、同じ位置に出るとは限りません。誰が灯したかは分からず、履歴にも残りません。存在を主張するのではなく、「今、どこかにも誰かがいる」と静かに感じるための一時的なつながりです。
 
 短い言葉を込めた花火も打ち上げられます。文面から色が決まり、空に咲いた花火をなぞると読めます。誰が書いたかは分からず、サーバーには何も残りません。空に積もるのは自分が居合わせた分だけで、正午にはすべて消えます。
 
@@ -76,7 +76,7 @@ An ambient canvas that layers light, sparks, and sound over a single night scene
 
 画面の隅では、これから日本で開催される花火大会までの時間が静かに進みます。季節の移ろいと、まだ見ぬ夜への予感を添えるサブ機能です。
 
-> 収録日程はシードデータです。公開リリース前に、各主催者の公式発表と開催日時を照合する必要があります。
+> 収録日程は、日本語版ウィキペディア「日本の花火大会一覧」(CC BY-SA) から週次で自動収集した暫定データと、手入力のシードです。出典は画面に表示しています。各主催者の公式発表との照合は済んでおらず、中止・延期は検知できません。
 
 ## ✦ 操作
 
@@ -95,7 +95,7 @@ An ambient canvas that layers light, sparks, and sound over a single night scene
 
 | 環境 | 配布形式 | 現在の状態 |
 |---|---|---|
-| Web | Vite静的ビルド | ローカル検証済み |
+| Web | Vite静的ビルド | https://hanabi-canvas.riumu.net で稼働中 |
 | iOS / Android | PWA・スタンドアロン表示 | 構成済み、実機検証を継続中 |
 | macOS | Electron・DMG | arm64 DMG生成済み、notarization未実施 |
 | Windows | Electron・NSIS | ビルド構成済み、Windows上での生成・動作確認が必要 |
@@ -178,6 +178,8 @@ npm run electron:build   # macOS DMG（WindowsではNSIS）
 ```
 
 `vite.config.ts`の`base: './'`は、Web、Electron、Wallpaper Engineで同じ静的ビルドを利用するための重要な設定です。変更しないでください。
+
+本番は、GitHub ActionsがWebと中継サーバーのイメージをGHCRへ公開し、VPS上のDocker Composeがそれを引く構成です。
 
 実機・本番環境の確認手順:
 
